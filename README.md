@@ -21,6 +21,7 @@ To run the code, in filename="trade-list.csv" change trade-list.csv to point to 
 
 ### Donations
 Donations are welcome to support us improve and develop new features for the program
+
 Bitcoin: 1EhkbRMf3hHxWeXYyFQPf62x6q5ZyLak3T
 
 
