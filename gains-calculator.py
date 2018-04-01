@@ -44,6 +44,9 @@ class TradingHistory:
 		datalist=datalist[::-1] #inverts data list to put in time order
 		
 		for trade in datalist:
+			for x in range(1,10): #"-" in gift trades weren't able to be converted in floats so was messing things up
+				if trade[x]=="-":
+					trade[x]=0
 			tr = Trade()
 			tr.buy = float(trade[2])
 			tr.currency_buy = trade[3] 
