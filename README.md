@@ -17,7 +17,7 @@ At each stage the tool adds the gains made to the captial gains total where the 
 ### Getting Started
 Currently **the program requires a csv file formatted in a specific way including all trades with GBP values**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!).
 
-To run the code, in filename="trade-list.csv" change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltax(taxyear)` where tax year is the year you want to check i.e. 2017 will calculate tax for the 2017/18 tax year.
+To run the code, in filename="trade-list.csv" change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltax(taxyear)` where tax year is the year you want to check i.e. 2018 will calculate tax for the 2017/18 tax year.
 
 ### Donations
 Donations are welcome to support us improve and develop new features for the program
