@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 
 import uuid
 import random
@@ -89,11 +89,13 @@ def averagecostbasisuptotrade(x):
 def averagegain(x):
 	return trading.trades[x].buy_value_gbp - averagecostbasisuptotrade(x)*trading.trades[x].sell
 
-def taxyearstart(taxyear):
-	return datetime(taxyear,4,6)
+### 2018 taxyear is 2017/18 taxyear
+def taxyearstart(taxyear): 
+	return datetime(taxyear-1,4,6)
 
 def taxyearend(taxyear):
-	return datetime(taxyear+1,4,5)
+	return datetime(taxyear,4,5)
+
 
 
 fifototal=0
@@ -163,7 +165,7 @@ def fifobnb(taxyear):
 			for y in range(x-1,len(data)):
 		
 			
-				if y>x and y-x<=30: #May need to adjust this should be dates
+				if trading.trades[y].date>trading.trades[x].date and trading.trades[y].date-timedelta(days=30)>trading.trades[x].date: #May need to adjust this
 
 				
 					if trading.trades[y].buy!=0 and trading.trades[y].currency_buy==trading.trades[x].currency_sell:
