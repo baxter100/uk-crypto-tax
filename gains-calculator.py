@@ -223,11 +223,14 @@ def average(taxyear):
 
 
 def totaltax(taxyear):
-	days = fifodays(taxyear)
-	bnb = fifobnb(taxyear)
-	avg = average(taxyear)
+	for x in range(0,len(data)): ### Print warning to contact HMRC
+		if trading.trades[x].sell_value_gbp >= 4*annualallowance and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
+			print("Sale:",x," has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom")
+		
+	days = int(round(fifodays(taxyear)))
+	bnb = int(round(fifobnb(taxyear)))
+	avg = int(round(average(taxyear)))
 	print("Tax from days: £",days,". Tax from bed and breakfasting: £ ",bnb,". Tax from 404 Holdings: £ ",avg, "Total: £",days+bnb+avg)
-
 
 
 
