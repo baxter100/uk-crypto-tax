@@ -30,7 +30,7 @@ class Trade:
 
 class TradingHistory:
 	trades = []
-	def load_trades_from_csv(self,filename="fifo-day-test.csv"):
+	def load_trades_from_csv(self,filename="trade-list.csv"):
 		try:
 			with open( filename ) as f:
 				reader = csv.reader(f)     # create a 'csv reader' from the file object
@@ -199,12 +199,12 @@ def fifobnb(taxyear):
 	fifobnbtotal=0
 	for x in range(0,len(data)):
 		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="" and trading.trades[x].sell!=0:
-			
+
 			for y in range(x-1,len(data)):
 		
 			
-				if trading.trades[y].date>trading.trades[x].date and trading.trades[y].date-timedelta(days=30)>trading.trades[x].date: #May need to adjust this
-
+				if trading.trades[y].date>trading.trades[x].date and trading.trades[y].date-timedelta(days=30)<=trading.trades[x].date: #May need to adjust this
+					
 				
 					if trading.trades[y].buy!=0 and trading.trades[y].currency_buy==trading.trades[x].currency_sell:
 						if trading.trades[y].buy>=trading.trades[x].sell:
