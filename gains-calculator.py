@@ -1,3 +1,5 @@
+############### This is the one I've been working on! (Adam)
+
 import csv
 from datetime import datetime, date, time, timedelta
 
@@ -44,7 +46,7 @@ class TradingHistory:
 		datalist=datalist[::-1] #inverts data list to put in time order
 		
 		for trade in datalist:
-			for x in range(1,10): #"-" in gift trades weren't able to be converted in floats so was messing things up
+			for x in [6,8,9]: #"-" in gift trades weren't able to be converted in floats so was messing things up
 				if trade[x]=="-":
 					trade[x]=0
 			tr = Trade()
@@ -171,7 +173,7 @@ def fifodays(taxyear):
 							
 								fifodaytotal=fifodaytotal+gainpair(x,y,trading.trades[x].sell) #adds gain to total
 								#print("Sale of ",trading.trades[x].sell, trading.trades[x].currency_sell, "for", trading.trades[x].buy,trading.trades[x].currency_buy, "at", trading.trades[x].exchange )
-								print("In sale",x,trading.trades[x].sell, trading.trades[x].currency_sell,"was sold for",trading.trades[x].currency_buy,"with a total value of", trading.trades[x].buy_value_gbp, "and total cost basis of", costbasisGBPpercoin[y]*trading.trades[x].sell)
+								#print("In sale",x,trading.trades[x].sell, trading.trades[x].currency_sell,"was sold for",trading.trades[x].currency_buy,"with a total value of", trading.trades[x].buy_value_gbp, "and total cost basis of", costbasisGBPpercoin[y]*trading.trades[x].sell)
 								trading.trades[y].buy=trading.trades[y].buy-trading.trades[x].sell #updates trade amounts
 								trading.trades[x].sell=0 #updates trade amounts
 								trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy) #updates trade amounts
@@ -269,7 +271,7 @@ def average(taxyear):
 
 		
 
-##### Tax Warning Bit
+##### Tax Facts
 
 def annualallowance(taxyear):
 	if taxyear==2015:
@@ -281,8 +283,10 @@ def annualallowance(taxyear):
 	if taxyear==2018:
 		 return 11300
 
+taxpercentage = 10
 
-def totaltax(taxyear):
+
+def totalgain(taxyear):
 	for x in range(0,len(data)): ### Print warning to contact HMRC
 		if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
 			print("Sale:",x," has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom")
@@ -290,11 +294,23 @@ def totaltax(taxyear):
 	days = int(round(fifodays(taxyear)))
 	bnb = int(round(fifobnb(taxyear)))
 	avg = int(round(average(taxyear)))
+	
+	taxablegain = days + bnb +avg - annualallowance(taxyear)
+	
 	print("Tax from days: £",days,". Tax from bed and breakfasting: £ ",bnb,". Tax from 404 Holdings: £ ",avg, "Total: £",days+bnb+avg)
+	print("Taxable gain: £",taxablegain)
+	return days + bnb +avg
+
+def taxablegain(taxyear):
+	return totalgain(taxyear) -annualallowance(taxyear)
+
+def totaltaxnormalpeople(taxyear):
+	total = totalgain(taxyear)
+	print("Total tax owed at",taxpercentage,"% tax rate: £",(total-annualallowance(taxyear))*taxpercentage/100)
+	
 
 
 
 
 
-
-#print(totaltax(2018))
+#print(totaltaxnormalpeople(2018))
