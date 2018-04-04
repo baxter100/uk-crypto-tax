@@ -15,7 +15,7 @@ This tool aims to follow the guidlines from HMRC on crypto taxes. Most of this h
 At each stage the tool adds the gains made to the captial gains total where the sale has occured in the given tax year.
 
 #### Ambiguities around strategies
-There are various ambiguities around specifics of how gain should be calculated and we highlight them here:
+There are various ambiguities around specifics of how gain should be calculated and we highlight them here. If you have any experience here or advice, please get in touch.
 
 1. The current model uses a FIFO strategy for the same day rule and the bread and breakfast rule stage. We are not sure however that this is strictly correct
 
