@@ -81,18 +81,7 @@ for tradenumber in range(0,len(data)):
 		else:
 			valueofsalepercoin.append(trading.trades[tradenumber].buy_value_gbp/trading.trades[tradenumber].sell)
 
-def averagecostbasisuptotrade(x):
-	t=0
-	q=0
-	for y in range(0,x):
-		if trading.trades[y].currency_buy==trading.trades[x].currency_sell:
-		
-			t=t+costbasisGBPpercoin[y]*trading.trades[y].buy
-			q=q+trading.trades[y].buy
-	return t/q
 
-def averagegain(x):
-	return trading.trades[x].buy_value_gbp - averagecostbasisuptotrade(x)*trading.trades[x].sell
 
 ### 2018 taxyear is 2017/18 taxyear
 def taxyearstart(taxyear):
@@ -255,18 +244,53 @@ def fifobnb(taxyear):
 
 	return(fifobnbtotal)
 
+crypto_list = []
+for tradenumber in range(0,len(data)):
+		
+		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" :
+			crypto_list.append(trading.trades[tradenumber].currency_buy)
+		
+print(crypto_list)
+
+def averagecostbasisuptotrade(x,countervalue,counteramount):
+	t=0
+	q=0
+	for y in range(0,x):
+		if trading.trades[y].currency_buy==trading.trades[x].currency_sell:
+		
+			t=t+costbasisGBPpercoin[y]*trading.trades[y].buy
+			q=q+trading.trades[y].buy
+	return (t- countervalue)/(q - counteramount)
+
+
+def averagegain(x):
+	return trading.trades[x].buy_value_gbp - averagecostbasisuptotrade(x)*trading.trades[x].sell
+
+	
+
+def average_asset(taxyear,asset):
+	averagetotal = 0
+	countervalue = 0
+	counteramount = 0
+	for x in range(0,len(data)):
+		if trading.trades[x].currency_sell==asset and trading.trades[x].sell!=0:
+			costbasis = averagecostbasisuptotrade(x,countervalue,counteramount)*trading.trades[x].sell
+			if taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
+			
+				averagetotal=averagetotal+ trading.trades[x].buy_value_gbp - costbasis
+
+			countervalue = countervalue + costbasis
+			counteramount = counteramount + trading.trades[x].sell
+
+	return averagetotal
 
 
 def average(taxyear):
-	averagetotal = 0
-	for x in range(0,len(data)):
-		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="" and trading.trades[x].sell!=0:
-						
-			if taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
-			
-				averagetotal=averagetotal+averagegain(x)
-
-	return(averagetotal)
+	averagetotal=0
+	for asset in crypto_list:
+		averagetotal =averagetotal + average_asset(taxyear,asset)
+		
+	return averagetotal
 
 
 		
