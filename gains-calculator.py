@@ -1,5 +1,4 @@
 
-
 import csv
 from datetime import datetime, date, time, timedelta
 
@@ -31,7 +30,7 @@ class Trade:
 
 class TradingHistory:
 	trades = []
-	def load_trades_from_csv(self,filename="trade-list.csv"):
+	def load_trades_from_csv(self,filename="fifo-day-test.csv"):
 		try:
 			with open( filename ) as f:
 				reader = csv.reader(f)     # create a 'csv reader' from the file object
@@ -147,13 +146,13 @@ def fifoyear(taxyear):
 def fifodays(taxyear):
 	fifodaytotal=0
 	for x in range(0,len(data)):
+		
 		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="": #if selling an asset
-			
+
 			for y in range(0,len(data)): #begins checking trades to match with from start
 		
-			
-				if trading.trades[x].date.day== trading.trades[y].date.day and trading.trades[x].date.month== trading.trades[y].date.month and trading.trades[x].date.day== trading.trades[y].date.month: #if the days are the same, there must be a better way!
-
+				if trading.trades[x].currency_sell==trading.trades[y].currency_buy and trading.trades[x].date.day == trading.trades[y].date.day and trading.trades[x].date.month == trading.trades[y].date.month and trading.trades[x].date.year == trading.trades[y].date.year: #if the days are the same, there must be a better way!
+					
 				
 					if trading.trades[y].buy!=0 and trading.trades[y].currency_buy==trading.trades[x].currency_sell: #if there is currency to be matched with and the sell currency of x is the same as buy currency of y
 						if trading.trades[y].buy>=trading.trades[x].sell: # if there's more of the buy currency in y than sell in x it is simpler, we can just add the gain to total and reduce the amounts in y sell and x buy
@@ -250,7 +249,7 @@ for tradenumber in range(0,len(data)):
 		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" :
 			crypto_list.append(trading.trades[tradenumber].currency_buy)
 		
-print(crypto_list)
+#print(crypto_list)
 
 def averagecostbasisuptotrade(x,countervalue,counteramount):
 	t=0
@@ -260,7 +259,10 @@ def averagecostbasisuptotrade(x,countervalue,counteramount):
 		
 			t=t+costbasisGBPpercoin[y]*trading.trades[y].buy
 			q=q+trading.trades[y].buy
-	return (t- countervalue)/(q - counteramount)
+	if q - counteramount == 0:
+		return 0
+	else:	
+		return (t- countervalue)/(q - counteramount)
 
 
 def averagegain(x):
@@ -289,7 +291,6 @@ def average(taxyear):
 	averagetotal=0
 	for asset in crypto_list:
 		averagetotal =averagetotal + average_asset(taxyear,asset)
-		
 	return averagetotal
 
 
@@ -321,7 +322,7 @@ def totalgain(taxyear):
 	
 	taxablegain = days + bnb +avg - annualallowance(taxyear)
 	
-	print("Tax from days: £",days,". Tax from bed and breakfasting: £ ",bnb,". Tax from 404 Holdings: £ ",avg, "Total: £",days+bnb+avg)
+	print("Gain from days: £",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total: £",days+bnb+avg)
 	print("Taxable gain: £",taxablegain)
 	return days + bnb +avg
 
@@ -337,4 +338,4 @@ def totaltaxnormalpeople(taxyear):
 
 
 
-#print(totaltaxnormalpeople(2018))
+print(totaltaxnormalpeople(2018))
