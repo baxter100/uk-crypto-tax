@@ -21,6 +21,8 @@ There are various ambiguities around specifics of how gain should be calculated 
 
 2. The current model works out the gain on a trade as value_of_trade-cost_basis. However, how to calculate the value of a trade appears to be ambiguous. This can either be the value of the assets acquired or the value of the assets sold (in GBP). The current model uses "Counterpart" pricing for this valuation as this appears most intuitive, though there are different methods of doing this i.e. "Best" and "Transaction" prices. (The same issue may also apply to calculating the cost basis)
 
+3. Regarding bed and breakfasting we need to clarify if the 30 days is inclusive.
+
 ### Getting Started
 Currently **the program requires a csv file formatted in a specific way including all trades with GBP values**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!).
 
