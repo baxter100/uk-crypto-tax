@@ -38,7 +38,7 @@ Donations are welcome to support us with improving the code and develop new feat
 
 We've set up addresses for most of your favourite coins ;)
 
-ETH: 0xff2250aa872c77d2670af18c1d5081195ed499f8
+ETH: 0xff2250aa872c77d2670af18c1d5081195ed499f8\n
 Bitcoin: 19TB1Wz5JRVeLfD1KmP7zpyH9hK7S52UVK
 DASH: XhN5yPWhfu5Q4Jwieip9xRVfNiWJWgEujK
 LTC: LUSD4xWL2RgvCCUDtwhecm89BjuH4hPR1Q
