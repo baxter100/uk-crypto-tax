@@ -1,7 +1,9 @@
 ## uk-crypto-tax
 Prototype Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK
 
-**The current version only outputs total gains but not yet a proper tax report. We are currently working on adding this**
+**The current versions only output total gains but not yet a proper tax report. We are currently working on adding this**
+
+**We have two seperate versions to help noticing errors. Version 2 is better structured code and likely what we will use in the future. At the moment it seems they both output the same values, except that version 2 recognizes gifts/hardforks as taxable events.**
 
 ### Disclaimer
 You use this code at your own discretion. We offer no guarantee that this will calculate tax exactly as HMRC requires. A fundamental reason for adopting open source methods in this project is so that people from all backgrounds can contribute, spot errors and help improve the system.
@@ -28,10 +30,15 @@ There are various ambiguities around specifics of how gain should be calculated 
 ### Getting Started
 Currently **the program requires a csv file formatted in a specific way including all trades with GBP values**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). If you are stitching multiple lists together, make sure the trades are still in chronological order.
 
+Currently we have two separately created versions. This is helping us identify problems and mistakes. The two versions are more or less the same, though currently version two considers gifting/hard forks as a taxable event. Further, version two is likely the structure we will use in the end as it will be easier to incorporate a tax report.
+
 #### Version 1
-To run the code, in filename="trade-list.csv" change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltaxnormalpeople(taxyear)` where tax year is the year you want to check i.e. 2018 will calculate tax for the 2017/18 tax year.
+To run the code, in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltaxnormalpeople(taxyear)` where tax year is the year you want to check i.e. 2018 will calculate tax for the 2017/18 tax year.
 
 Version 1 currently doesn't output a tax report, but we will be amending this soon.
+
+#### Version 2
+On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chanbge trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
 
 ### Donations
 Donations are welcome to support us with improving the code and develop new features - see below!
@@ -60,6 +67,6 @@ ETC: 0x5e7a73447cce4978c2a1fdde1b9c7e6e5dc84be8
 
 
 ### Future Developments
+* Improve the program to output a more comprehensive tax report
+* Create a nicer user interface
 * Take input from different sources directly like Poloniex, Localbitcoin, kraken etc.. so cointracking isn't required
-* Make a nice user interface
-* Output a proper report
