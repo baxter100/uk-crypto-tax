@@ -29,10 +29,20 @@ Currently **the program requires a csv file formatted in a specific way includin
 To run the code, in filename="trade-list.csv" change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltax(taxyear)` where tax year is the year you want to check i.e. 2018 will calculate tax for the 2017/18 tax year.
 
 ### Donations
-Donations are welcome to support us improve and develop new features for the program
+Donations are welcome to support us with improving the code and develop new features - see below!
 
-Bitcoin: 1EhkbRMf3hHxWeXYyFQPf62x6q5ZyLak3T
+We've set up addresses for most of your favourite coins ;)
 
+ETH: 0xff2250aa872c77d2670af18c1d5081195ed499f8
+Bitcoin: 19TB1Wz5JRVeLfD1KmP7zpyH9hK7S52UVK
+DASH: XhN5yPWhfu5Q4Jwieip9xRVfNiWJWgEujK
+LTC: LUSD4xWL2RgvCCUDtwhecm89BjuH4hPR1Q
+ZCASH: t1V46YHSApsYod1U5jX5Szd8Zs5stkCxL1C
+DOGE: DNnSJKMoTRSKw2iq52jRPt5pVh4LytWJoM
+BitcoinCash: 13fx3xWuff3Vt7GVZhqEPZaFeHetJLDjtT
+BAT: 0xff2250aa872c77d2670af18c1d5081195ed499f8
+EOS: 0xff2250aa872c77d2670af18c1d5081195ed499f8
+ETC: 0x5e7a73447cce4978c2a1fdde1b9c7e6e5dc84be8
 
 ### Future Developments
 * Take input from different sources directly like Poloniex, Localbitcoin, kraken etc.. so cointracking isn't required
