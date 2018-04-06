@@ -28,7 +28,7 @@ There are various ambiguities around specifics of how gain should be calculated 
 4. We are assuming that gifts of coins/coins gained from hard forks are not taxable events and the costbasis is set at 0.
 
 ### Getting Started
-Currently **the program requires a csv file formatted in a specific way including all trades with GBP values**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). If you are stitching multiple lists together, make sure the trades are still in chronological order.
+Currently **the program requires a csv file formatted in a specific way including all trades with GBP values --- see sample-trade-list.csv**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). If you are stitching multiple lists together, make sure the trades are still in chronological order.
 
 Currently we have two separately created versions. This is helping us identify problems and mistakes. The two versions are more or less the same, though currently version two considers gifting/hard forks as a taxable event. Further, version two is likely the structure we will use in the end as it will be easier to incorporate a tax report.
 
