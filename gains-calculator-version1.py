@@ -1,4 +1,3 @@
-
 import csv
 from datetime import datetime, date, time, timedelta
 
@@ -69,7 +68,7 @@ data = trading.load_trades_from_csv()
 
 trading.append_cointracking_trade_list(data) 
 
-
+### Populate list of values and cost basis prior to editing list
 valueofsalepercoin = []
 costbasisGBPpercoin = []
 
@@ -80,69 +79,46 @@ for tradenumber in range(0,len(data)):
 		else:
 			valueofsalepercoin.append(trading.trades[tradenumber].buy_value_gbp/trading.trades[tradenumber].sell)
 
+### Populate list of cryptos used
+crypto_list = []
+for tradenumber in range(0,len(data)):
+		
+		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" :
+			crypto_list.append(trading.trades[tradenumber].currency_buy)
+		if trading.trades[tradenumber].currency_sell not in crypto_list and trading.trades[tradenumber].currency_sell !="GBP" :
+			crypto_list.append(trading.trades[tradenumber].currency_sell)
 
+
+
+##### Tax Facts
+
+def annualallowance(taxyear):
+	if taxyear==2015:
+		 return 11000
+	if taxyear==2016:
+		 return 11100
+	if taxyear==2017:
+		 return 11100
+	if taxyear==2018:
+		 return 11300
+
+taxpercentage = 10
 
 ### 2018 taxyear is 2017/18 taxyear
 def taxyearstart(taxyear):
 	return datetime(taxyear-1,4,6)
 
 def taxyearend(taxyear):
-	return datetime(taxyear,4,5)
+	return datetime(taxyear,4,6) #This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
 
 
-
-fifototal=0
-
+### Calculate gain when two trades have been matched
 def gainpair(x,y,amountsellcurrency): #Given a pair of trades, returns the capital gain
 	return trading.trades[x].buy_value_gbp*amountsellcurrency/trading.trades[x].sell - costbasisGBPpercoin[y]*amountsellcurrency
 
-def fifoyear(taxyear):
-	fifototal=0
-
-	for x in range(0,len(data)):
-		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="": #if selling an asset
-			
-			for y in range(0,len(data)): #begins checking trades to match with from start
-				
-				if trading.trades[y].buy!=0 and trading.trades[y].currency_buy==trading.trades[x].currency_sell: #if there is currency to be matched with and the sell currency of x is the same as buy currency of y
-					if trading.trades[y].buy>=trading.trades[x].sell:	# if there's more of the buy currency in y than sell in x it is simpler, we can just add the gain to total and reduce the amounts in y sell and x buy
-						if taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear): # this is so that only gains in a particular year are added
-						
-							fifototal=fifototal+gainpair(x,y,trading.trades[x].sell) #adds gain to total
-							trading.trades[y].buy=trading.trades[y].buy-trading.trades[x].sell #updates trade amounts
-							trading.trades[x].sell=0 #updates trade amounts
-							trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy) #updates trade amounts
-
-							break
-						else:
-							trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy) #updates trade amounts
-							trading.trades[y].buy=trading.trades[y].buy-trading.trades[x].sell #updates trade amounts
-							trading.trades[x].sell=0 #updates trade amounts
-
-							break
-					
-					elif taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):  # this is so that only gains in a particular year are added
-						fifototal=fifototal+gainpair(x,y,trading.trades[y].buy) #adds gain to total
-					
-						
-						trading.trades[x].sell=trading.trades[x].sell-trading.trades[y].buy #updates trade amounts
-					
-						trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy) #updates trade amounts
-						trading.trades[y].buy=0 #updates trade amounts
-
-					else:
-						trading.trades[x].sell=trading.trades[x].sell-trading.trades[y].buy #updates trade amounts
-					
-					
-						trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy) #updates trade amounts
-						trading.trades[y].buy=0 #updates trade amounts
-				
-
-	return(fifototal)
 
 
-
-
+### Calculate gains on sameday trades using fifo
 def fifodays(taxyear):
 	fifodaytotal=0
 	for x in range(0,len(data)):
@@ -194,7 +170,7 @@ def fifodays(taxyear):
 
 	return(fifodaytotal)
 
-
+### Calculate gains on bnb trades using fifo
 def fifobnb(taxyear):
 	fifobnbtotal=0
 	for x in range(0,len(data)):
@@ -243,14 +219,8 @@ def fifobnb(taxyear):
 
 	return(fifobnbtotal)
 
-crypto_list = []
-for tradenumber in range(0,len(data)):
-		
-		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" :
-			crypto_list.append(trading.trades[tradenumber].currency_buy)
-		
-#print(crypto_list)
 
+### Calculate gains on trades using 404 holdings rule
 def averagecostbasisuptotrade(x,countervalue,counteramount):
 	t=0
 	q=0
@@ -276,6 +246,7 @@ def average_asset(taxyear,asset):
 	counteramount = 0
 	for x in range(0,len(data)):
 		if trading.trades[x].currency_sell==asset and trading.trades[x].sell!=0:
+			
 			costbasis = averagecostbasisuptotrade(x,countervalue,counteramount)*trading.trades[x].sell
 			if taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
 			
@@ -291,24 +262,12 @@ def average(taxyear):
 	averagetotal=0
 	for asset in crypto_list:
 		averagetotal =averagetotal + average_asset(taxyear,asset)
+		
 	return averagetotal
 
 
 		
 
-##### Tax Facts
-
-def annualallowance(taxyear):
-	if taxyear==2015:
-		 return 11000
-	if taxyear==2016:
-		 return 11100
-	if taxyear==2017:
-		 return 11100
-	if taxyear==2018:
-		 return 11300
-
-taxpercentage = 10
 
 
 def totalgain(taxyear):
@@ -316,14 +275,14 @@ def totalgain(taxyear):
 		if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
 			print("Sale:",x," has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom")
 		
-	days = int(round(fifodays(taxyear)))
-	bnb = int(round(fifobnb(taxyear)))
-	avg = int(round(average(taxyear)))
+	days = round(fifodays(taxyear), 2)
+	bnb = round(fifobnb(taxyear), 2)
+	avg = round(average(taxyear), 2)
 	
-	taxablegain = days + bnb +avg - annualallowance(taxyear)
+	taxablegain = round(days + bnb +avg - annualallowance(taxyear), 2)
 	
-	print("Gain from days: £",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total: £",days+bnb+avg)
-	print("Taxable gain: £",taxablegain)
+	print("Gain from days: £",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total Capital Gains for ",taxyear-1,"/",taxyear,": £",round(days+bnb+avg, 2))
+	print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for normal people: £",taxablegain)
 	return days + bnb +avg
 
 def taxablegain(taxyear):
@@ -331,11 +290,11 @@ def taxablegain(taxyear):
 
 def totaltaxnormalpeople(taxyear):
 	total = totalgain(taxyear)
-	print("Total tax owed at",taxpercentage,"% tax rate: £",(total-annualallowance(taxyear))*taxpercentage/100)
+	print("Total tax owed at",taxpercentage,"% tax rate: £",round((total-annualallowance(taxyear))*taxpercentage/100, 2))
 	
 
 
 
 
 
-print(totaltaxnormalpeople(2018))
+totaltaxnormalpeople(2018)
