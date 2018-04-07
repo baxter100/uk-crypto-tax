@@ -63,6 +63,8 @@ BAT: 0xff2250aa872c77d2670af18c1d5081195ed499f8
 
 EOS: 0xff2250aa872c77d2670af18c1d5081195ed499f8
 
+NANO (XRB): xrb_1rxyjpdo7wnbab813eisg1bdfaihzymod4tmuqafhch89j7heuapypyjj3sj
+
 ETC: 0x5e7a73447cce4978c2a1fdde1b9c7e6e5dc84be8
 
 
