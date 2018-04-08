@@ -48,7 +48,7 @@ For guidance installing python3 on your machine see https://wiki.python.org/moin
 Currently we have two separately created versions. This is helping us identify problems and mistakes. The two versions are more or less the same, though currently version two considers gifting/hard forks as a taxable event. Further, version two is likely the structure we will use in the end as it will be easier to incorporate a tax report.
 
 ##### Version 1
-To run the code, in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltaxnormalpeople(taxyear)` where tax year is the year you want to check i.e. 2018 will calculate tax for the 2017/18 tax year.
+To run the code, in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info. Then run the python file. You will be asked to input your rate of tax and the tax year you want to calculate gains for.
 
 Version 1 currently doesn't output a tax report, but we will be amending this soon.
 
