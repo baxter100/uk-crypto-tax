@@ -28,16 +28,31 @@ There are various ambiguities around specifics of how gain should be calculated 
 4. We are assuming that gifts of coins/coins gained from hard forks are not taxable events and the costbasis is set at 0.
 
 ### Getting Started
+There are basically four steps to getting this running:
+1. Creating an appropriate trade list
+2. Installing python3 (this code is not python v.2 compatible)
+3. Downloading one of the gainscalculator files and making minor edits
+4. Executing the file
+
+#### Creating an appropriate trade list
+
 Currently **the program requires a csv file formatted in a specific way including all trades with GBP values --- see sample-trade-list.csv**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). If you are stitching multiple lists together, make sure the trades are still in chronological order.
+
+#### Installing python3
+Installing Python is generally easy, and nowadays many Linux and UNIX distributions include a recent Python. Even some Windows computers (notably those from HP) now come with Python already installed.
+
+For guidance installing python3 on your machine see https://wiki.python.org/moin/BeginnersGuide/Download
+
+#### Making minor edits
 
 Currently we have two separately created versions. This is helping us identify problems and mistakes. The two versions are more or less the same, though currently version two considers gifting/hard forks as a taxable event. Further, version two is likely the structure we will use in the end as it will be easier to incorporate a tax report.
 
-#### Version 1
+##### Version 1
 To run the code, in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info. Then run `totaltaxnormalpeople(taxyear)` where tax year is the year you want to check i.e. 2018 will calculate tax for the 2017/18 tax year.
 
 Version 1 currently doesn't output a tax report, but we will be amending this soon.
 
-#### Version 2
+##### Version 2
 On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chanbge trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
 
 ### Donations
