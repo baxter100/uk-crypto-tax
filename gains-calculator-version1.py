@@ -107,6 +107,8 @@ def annualallowance(taxyear):
 
 taxpercentage = float(input('Enter the percentage of tax you pay on captial gains: '))
 
+taxyear = int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
+
 ### 2018 taxyear is 2017/18 taxyear
 def taxyearstart(taxyear):
 	return datetime(taxyear-1,4,6)
@@ -300,4 +302,4 @@ def totaltax(taxyear):
 
 
 
-totaltax(2018)
+totaltax(taxyear)
