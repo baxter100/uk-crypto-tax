@@ -1,3 +1,4 @@
+
 import csv
 from datetime import datetime, date, time, timedelta
 
@@ -101,8 +102,10 @@ def annualallowance(taxyear):
 		 return 11100
 	if taxyear==2018:
 		 return 11300
+	if taxyear==2019:
+		 return 11700
 
-taxpercentage = 10
+taxpercentage = float(input('Enter the percentage of tax you pay on captial gains: '))
 
 ### 2018 taxyear is 2017/18 taxyear
 def taxyearstart(taxyear):
@@ -288,7 +291,7 @@ def totalgain(taxyear):
 def taxablegain(taxyear):
 	return totalgain(taxyear) -annualallowance(taxyear)
 
-def totaltaxnormalpeople(taxyear):
+def totaltax(taxyear):
 	total = totalgain(taxyear)
 	print("Total tax owed at",taxpercentage,"% tax rate: £",round((total-annualallowance(taxyear))*taxpercentage/100, 2))
 	
@@ -297,4 +300,4 @@ def totaltaxnormalpeople(taxyear):
 
 
 
-totaltaxnormalpeople(2018)
+totaltax(2018)
