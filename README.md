@@ -5,8 +5,9 @@
 2. [Disclaimer](#disclaimer)
 3. [Tax Model](#tax-model)
 4. [Getting Started](#getting-started)
-5. [Donations](#donations)
-6. [Future Developments](#future-developments)
+5. [Troubleshooting](#troubleshooting)
+6. [Donations](#donations)
+7. [Future Developments](#future-developments)
 
 ### Introduction
 Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK
@@ -64,6 +65,16 @@ Version 1 currently doesn't output a tax report, but we will be amending this so
 
 ##### Version 2
 On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chanbge trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
+
+### Troubleshooting
+Getting strange results? There's a few things you might want to try:
+
+* Have you checked both version 1 and 2? Gifts are added to your gains in v2 so this may be giving you a larger figure than expected
+* How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
+* Which version of python are you using? You need to be using version 3!
+
+If you get any error messages when running the code, get in touch!
+
 
 ### Donations
 Donations are welcome to support us with improving the code and develop new features - see below!
