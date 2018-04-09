@@ -72,6 +72,7 @@ Getting strange results? There's a few things you might want to try:
 * Have you checked both version 1 and 2? Gifts are added to your gains in v2 so this may be giving you a larger figure than expected
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
 * Which version of python are you using? You need to be using version 3!
+* Which fiat currencies have you been trading in? The program currently only considers GBP as fiat, so if you have trades in other fiat currencies you're likely to get strange results.
 
 If you get any error messages when running the code, get in touch!
 
