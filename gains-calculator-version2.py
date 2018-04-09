@@ -140,14 +140,14 @@ class GlobalHoldings():
 		self.holdings = {}
 		
 	def addCoins(self, trade):
-		if trade.currency_buy == "GBP" or trade.bmatched:
+		if trade.currency_buy == "GBP" or trade.currency_buy == "EUR" or trade.bmatched:
 			return
 		if trade.currency_buy not in self.holdings:
 			self.holdings[trade.currency_buy] = CurrencyHoldings(trade.currency_buy)
 
 		self.holdings[trade.currency_buy].addCoins(trade)
 	def subtractCoins(self, trade):
-		if trade.currency_sell == "GBP" or trade.smatched:
+		if trade.currency_sell == "GBP"  or trade.currency_sell == "EUR" or trade.smatched:
 			return None
 		if trade.currency_sell not in self.holdings:
 			self.holdings[trade.currency_sell] = CurrencyHoldings(trade.currency_sell)
@@ -183,7 +183,7 @@ class FIFOStrategy:
 		bTrade = self.trades[self.bTrade]
 
 		if bTrade.bmatched or sTrade.smatched: return False
-		if sTrade.currency_sell=="GBP" or sTrade.currency_sell=="": return False  
+		if sTrade.currency_sell=="GBP" or sTrade.currency_sell=="EUR" or sTrade.currency_sell=="": return False  
 		if bTrade.buy==0 or bTrade.currency_buy!=sTrade.currency_sell: return False
 		if callable(self.condition) and not self.condition(*self.current()): return False 
 		return True
@@ -327,12 +327,3 @@ trading = TradingHistory()
 trading.append_cointrackingcsv_trade_list("trade-list.csv") 
 tax_calculator = TaxCalculator(trading)
 print("new ",tax_calculator.calculateUKTax(2018))
-
-
-
-
-
-
-
-
-
