@@ -80,15 +80,17 @@ for tradenumber in range(0,len(data)):
 		else:
 			valueofsalepercoin.append(trading.trades[tradenumber].buy_value_gbp/trading.trades[tradenumber].sell)
 
+#### List of possible fiat currencies
+fiat_list = ["GBP", "EUR"]
+
 ### Populate list of cryptos used
 crypto_list = []
 for tradenumber in range(0,len(data)):
 		
-		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" :
+		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" and trading.trades[tradenumber].currency_buy!="EUR" :
 			crypto_list.append(trading.trades[tradenumber].currency_buy)
-		if trading.trades[tradenumber].currency_sell not in crypto_list and trading.trades[tradenumber].currency_sell !="GBP" :
+		if trading.trades[tradenumber].currency_sell not in crypto_list and trading.trades[tradenumber].currency_sell !="GBP" and trading.trades[tradenumber].currency_sell!="EUR" :
 			crypto_list.append(trading.trades[tradenumber].currency_sell)
-
 
 
 ##### Tax Facts
@@ -128,7 +130,7 @@ def fifodays(taxyear):
 	fifodaytotal=0
 	for x in range(0,len(data)):
 		
-		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="": #if selling an asset
+		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="EUR" and trading.trades[x].currency_sell!="": #if selling an asset
 
 			for y in range(0,len(data)): #begins checking trades to match with from start
 		
@@ -179,7 +181,7 @@ def fifodays(taxyear):
 def fifobnb(taxyear):
 	fifobnbtotal=0
 	for x in range(0,len(data)):
-		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="" and trading.trades[x].sell!=0:
+		if trading.trades[x].currency_sell!="GBP" and trading.trades[x].currency_sell!="EUR" and trading.trades[x].currency_sell!="" and trading.trades[x].sell!=0:
 
 			for y in range(x-1,len(data)):
 		
