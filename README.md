@@ -1,4 +1,14 @@
 ## uk-crypto-tax
+
+### Table of Contents
+1. [Introduction](#introduction)
+2. [Disclaimer](#disclaimer)
+3. [Tax Model](#tax-model)
+4. [Getting Started](#getting-started)
+5. [Donations](#donations)
+6. [Future Developments](#future-developments)
+
+### Introduction
 Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK
 
 **The current versions only output total gains but not yet a proper tax report. We are currently working on adding this**
