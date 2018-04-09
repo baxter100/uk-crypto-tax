@@ -27,15 +27,15 @@ This tool aims to follow the guidlines from HMRC on crypto taxes. Most of this h
 At each stage the tool adds the gains made to the captial gains total where the sale has occured in the given tax year.
 
 #### Ambiguities around strategies
-There are various ambiguities around specifics of how gain should be calculated and we highlight them here. If you have any experience here or advice, please get in touch.
+There are various ambiguities around specifics of how gain should be calculated and we highlight them here. If you have any experience here or advice, please get in touch (https://www.reddit.com/user/uk-crypto-tax/).
 
 1. The current model uses a FIFO strategy for the same day rule and the bread and breakfast rule stage. We are not sure however that this is strictly correct
 
 2. The current model works out the gain on a trade as value_of_trade-cost_basis. However, how to calculate the value of a trade appears to be ambiguous. This can either be the value of the assets acquired or the value of the assets sold (in GBP). The current model uses "Counterpart" pricing for this valuation as this appears most intuitive, though there are different methods of doing this i.e. "Best" and "Transaction" prices. (The same issue may also apply to calculating the cost basis)
 
-3. Regarding bed and breakfasting we need to clarify if the 30 days is inclusive.
+3. Regarding bed and breakfasting we need to clarify if the 30 days is inclusive
 
-4. We are assuming that gifts of coins/coins gained from hard forks are not taxable events and the costbasis is set at 0.
+4. We unsure whether gifts of coins/coins gained from hard forks are taxable events with costbasis 0 or not. At the moment, **version 1 does not consider this taxable** while **version 2 does**. **WARNING: This can make big differences to overall calculated gain**
 
 ### Getting Started
 There are basically four steps to getting this running:
