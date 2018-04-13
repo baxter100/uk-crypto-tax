@@ -29,7 +29,7 @@ class Trade:
 
 
 class TradingHistory:
-	trades = []
+	tradelist = []
 	def load_trades_from_csv(self,filename="trade-list.csv"):
 		try:
 			with open( filename ) as f:
@@ -60,9 +60,37 @@ class TradingHistory:
 			tr.buy_value_btc = float(trade[4])
 			tr.exchange = trade[11]
 
-			self.trades.append(tr)
+			self.tradelist.append(tr)
+			self.trades = copy.deepcopy(self.tradelist) #self.tradelist is the unmodified copy
+
+
+# class GainHistory:
+# 	gain_list=[]
+# 	for x in range(0,len(data)):
+# 		ga = Gains()
+# 		if viablesellcurrency(x):
+
+# GainHistory.gain_list[x].amount
+
+# class Gains:
+# 	amount = 0
+# 	currency = 0
+# 	date_acquired = 0
+# 	date_sold = 0
+# 	bought_at = 0
+# 	sold_at = 0
+# 	proceeds = 0
+# 	cost_basis = 0
+# 	gain_loss = 0
+
+# 	def updatereport():
+# 		pass
 	
-			
+
+
+
+
+		
 trading = TradingHistory()
 
 data = trading.load_trades_from_csv()
@@ -108,9 +136,9 @@ def annualallowance(taxyear):
 	if taxyear==2019:
 		 return 11700
 
-taxpercentage = float(input('Enter the percentage of tax you pay on captial gains: '))
+taxpercentage = 10#float(input('Enter the percentage of tax you pay on captial gains: '))
 
-taxyear = int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
+taxyear = 2018#int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
 
 ### 2018 taxyear is 2017/18 taxyear
 def taxyearstart(taxyear):
@@ -124,6 +152,8 @@ def taxdatecheck(x):
 		return True
 
 
+
+
 ##### Fifo calculations
 
 ### Calculate gain when two trades have been matched
@@ -131,9 +161,14 @@ def gainpair(x,y): #Given a pair of trades, returns the capital gain
 	if trading.trades[y].buy>=trading.trades[x].sell:
 
 		return trading.trades[x].buy_value_gbp*trading.trades[x].sell/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[x].sell
-	else:
-		return trading.trades[x].buy_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
+		# TaxReport.cost_basis += costbasisGBPpercoin[y]*trading.trades[x].sell
+		# TaxReport.proceeds += trading.trades[x].buy_value_gbp*trading.trades[x].sell/trading.trades[x].sell
+		# TaxReport.gain_loss += 	trading.trades[x].buy_value_gbp*trading.trades[x].sell/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[x].sell
 
+	else:
+
+		return trading.trades[x].buy_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
+		TaxReport.cost_basis += costbasisGBPpercoin[y]*trading.trades[y].buy
 
 def addgainsfifo(x,y): #adds gains from pair to total if tax year is correct
 	if taxdatecheck(x):
@@ -186,25 +221,16 @@ def fifodays(taxyear):
 	for x in range(0,len(data)):
 		
 		if viablesellcurrency(x):
-
-			for y in range(0,len(data)): #begins checking trades to match with from start
+			y=0
+			while y < len(data) and trading.trades[x].sell > 0: #begins checking trades to match with from start
 		
 				if viabledaymatch(x,y): #if dates and currencies match appropriately
 					
-					if trading.trades[y].buy>=trading.trades[x].sell:
+					fifodaytotal += addgainsfifo(x,y) #adds gain from this pair to total
 
-						fifodaytotal += addgainsfifo(x,y) #adds gain from this pair to total
-
-						fifoupdatetradelist(x,y)
-
-						break
-						
-					else:
-							
-						fifodaytotal += addgainsfifo(x,y) #adds gain from this pair to total
-
-						fifoupdatetradelist(x,y)				
-
+					fifoupdatetradelist(x,y)
+				
+				y+=1
 	return(fifodaytotal)
 
 ### Calculate gains on bnb trades using fifo
@@ -214,25 +240,15 @@ def fifobnb(taxyear):
 	for x in range(0,len(data)):
 
 		if viablesellcurrency(x):
-
-			for y in range(x+1,len(data)):
+			y=x+1
+			while y >= x+1 and y<len(data) and trading.trades[x].sell > 0:
 			
 				if viablebnbmatch(x,y):
-					
-					if trading.trades[y].buy>=trading.trades[x].sell:
-						
-						fifobnbtotal += addgainsfifo(x,y) #adds gain from this pair to total
 
-						fifoupdatetradelist(x,y)
+					fifobnbtotal += addgainsfifo(x,y) #adds gain from this pair to total
 
-						break
-						
-					else:
-							
-						fifobnbtotal += addgainsfifo(x,y) #adds gain from this pair to total
-
-						fifoupdatetradelist(x,y)
-
+					fifoupdatetradelist(x,y)
+				y +=1
 
 	return(fifobnbtotal)
 
@@ -281,6 +297,7 @@ def average(taxyear):
 		averagetotal += average_asset(taxyear,asset)
 		
 	return averagetotal
+
 
 
 		
