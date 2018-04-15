@@ -20,7 +20,7 @@ Tool written in Python for calculating Capital Gains Tax on cryptocurrency trade
 You use this code at your own discretion. We offer no guarantee that this will calculate tax exactly as HMRC requires. A fundamental reason for adopting open source methods in this project is so that people from all backgrounds can contribute, spot errors and help improve the system.
 
 ### Tax Model
-This tool aims to follow the guidlines from HMRC on crypto taxes. Most of this has been based on the helpful site https://cryptotax.uk/ and some independent research. The model so far works roughly as follows:
+This tool aims to follow the guidlines from HMRC on crypto taxes. Most of this has been based on the helpful sites https://bettingbitcoin.io/ and https://cryptotax.uk/ and some independent research. The model so far works roughly as follows:
 1. Same Day Rule. The tool first checks for occurences of sales of assets where there is a corresponding buy of the same asset on the same day, using FIFO on that day to match assets
 2. Bed & Breakfasting Rule. The tool then checks using the 'bread and breakfasting' rule to check for occurences of sales of assets where there is a corresponding buy of the same asset within 30 days in the future (inclusive). Again using FIFO to match assets.
 3. Section 104 Holding. Finally the program calculates gains from remaining assets by working out the average price paid for the remaining unmatched assets up until the sale.
