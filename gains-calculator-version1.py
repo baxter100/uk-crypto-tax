@@ -9,6 +9,7 @@ import uuid
 import random
 import copy
 
+
 ##### Tax Facts
 
 def annualallowance(taxyear):
@@ -172,34 +173,34 @@ class TradingHistory:
 			self.trades = copy.deepcopy(self.tradelist) #self.tradelist is the unmodified copy
 
 	def load_fees_from_csv(self,filename="fee-calculation.csv"):
-	 	try:
-	 		with open( filename ) as f:
-	 			reader = csv.reader(f)     # create a 'csv reader' from the file object
-	 			feelist = list( reader )  # create a list from the reader 
-	 	except Exception as e:
-	 		raise
-	 		feelist = []
-	 	return feelist
+		try:
+			with open( filename ) as f:
+				reader = csv.reader(f)     # create a 'csv reader' from the file object
+				feelist = list( reader )  # create a list from the reader 
+		except Exception as e:
+			raise
+			feelist = []
+		return feelist
 
 	def append_fees(self,feelist):
-	 	feelist.pop(0) #removes first line of data list which is headings
-	 	feelist=feelist[::-1] #inverts data list to put in time order
+		feelist.pop(0) #removes first line of data list which is headings
+		feelist=feelist[::-1] #inverts data list to put in time order
 
-	 	for trade in feelist:
-	 		for tr in self.trades:
-	 			if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
-	 				tr.fee_value_gbp = float(trade[4])
-	 				tr.currency_fee = trade[3]
-	 				tr.fee = float(trade[2])
-	 				break
+		for trade in feelist:
+			for tr in self.trades:
+				if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
+					tr.fee_value_gbp = float(trade[4])
+					tr.currency_fee = trade[3]
+					tr.fee = float(trade[2])
+					break
 		
-	 	for trade in feelist:
-	 		for tr in self.tradelist:
-	 			if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
-	 				tr.fee_value_gbp = float(trade[4])
-	 				tr.currency_fee = trade[3]
-	 				tr.fee = float(trade[2])
-	 				break
+		for trade in feelist:
+			for tr in self.tradelist:
+				if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
+					tr.fee_value_gbp = float(trade[4])
+					tr.currency_fee = trade[3]
+					tr.fee = float(trade[2])
+					break
 
 ### Create trade list		
 trading = TradingHistory()
@@ -210,7 +211,8 @@ trading.append_cointracking_trade_list(data)
 
 feelist = trading.load_fees_from_csv()
 
-# trading.append_fees(feelist)
+
+#trading.append_fees(feelist)
 
 
 ### Populate list of values and cost basis prior to editing list, this shouldn't be necessary once deep copying is used
@@ -235,7 +237,6 @@ for tradenumber in range(0,len(data)):
 			crypto_list.append(trading.trades[tradenumber].currency_buy)
 		if trading.trades[tradenumber].currency_sell not in crypto_list and trading.trades[tradenumber].currency_sell !="GBP" and trading.trades[tradenumber].currency_sell!="EUR" :
 			crypto_list.append(trading.trades[tradenumber].currency_sell)
-#print(crypto_list)
 
 
 
@@ -252,6 +253,7 @@ class Gain:
 	cost_basis = 0
 	gain_loss = 0
 	sell_number = 0
+	fee = 0
 
 	def __str__(self):
 		return "Amount: " + str(self.amount) +  " Currency: " + str(self.currency) + " Date Acquired: "+ str(self.date_acquired) +" Date Sold: "+ str(self.date_sold)  +  " Location of buy: "+ str(self.bought_location) +  " Location of sell: "+ str(self.sold_location) +  " Proceeds in GBP: " + str(self.proceeds) +  " Cost Basis in GBP: "+ str(self.cost_basis)+ " Fee in GBP: "+ str(self.fee) +  " Gain/Loss in GBP: "+ str(self.gain_loss)
@@ -269,23 +271,29 @@ class GainHistory:
 				ga = Gain()
 				ga.amount = trading.tradelist[x].sell #### Use the unmodified copy here to avoid future complication
 				ga.currency = trading.tradelist[x].currency_sell
-				ga.date_acquired = 0
+				ga.date_acquired = "?"
 				ga.date_sold = trading.tradelist[x].date 
-				ga.bought_location = 0
+				ga.bought_location = "?"
 				ga.sold_location = trading.tradelist[x].exchange
 				ga.proceeds = trading.tradelist[x].buy_value_gbp #Proceeds are always calculated here using buy value!
 				ga.cost_basis = 0
 				ga.gain_loss = 0
 				ga.sell_number = x
+				ga.fee = trading.tradelist[x].fee_value_gbp
 				
 				self.gain_list.append(ga)
 		
+	def __repr__(self):
+		return str(self)
+
 
 def mapfromtradetogainlistnumber(x):
 	for z in range(0,len(taxgains.gain_list)):
 		if taxgains.gain_list[z].sell_number==x:
 			return int(z)
 			break
+
+
 
 
 
@@ -466,3 +474,35 @@ def costs(taxyear): # Note this should include exhange fees!
 
 number_of_disposals = taxyeardisposalscount(taxyear)
 print ("Number of Disposals =", number_of_disposals, ". Disposal Proceeds = ", disposalproceeds(taxyear), ". Allowable Costs = ", costs(taxyear))
+
+taxyeargainlist = []
+for z in taxgains.gain_list:
+		if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+			taxyeargainlist.append(z)
+
+
+class htmloutput():
+	def simpletaxreport(self):
+		f = open('simpletaxreport.html','w')
+
+		message = str(str('\n'.join(self.html_table(taxyeargainlist))))
+
+		f.write(message)
+		f.close()
+
+	def html_table(self,lol):
+		yield '<table>'
+		yield '  <tr><td>'
+		yield '    </td><td> Amount </td><td> Currency    </td><td> Date Acquired    </td><td> Date Sold    </td><td> Buy  Location    </td><td> Sell Location     </td><td> Proceeds    </td><td> Cost Basis    </td><td> Fee    </td><td> Gain Loss'
+
+		for sublist in lol[::-1]:
+			yield '  <tr><td>'
+			yield '    </td><td>'+str(sublist.amount) + '    </td><td>' +str(sublist.currency)+ '    </td><td>' +str(sublist.date_acquired)+ '    </td><td>' +str(sublist.date_sold)+ '    </td><td>' +str(sublist.bought_location)+ '    </td><td>' +str(sublist.sold_location)+ '    </td><td>' +str(sublist.proceeds)+ '    </td><td>' +str(sublist.cost_basis)+ '    </td><td>' +str(sublist.fee)+ '    </td><td>' +str(sublist.gain_loss)
+		yield '</table>'
+
+
+
+		
+htmlout = htmloutput()
+
+htmlout.simpletaxreport()
