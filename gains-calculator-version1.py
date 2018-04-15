@@ -171,35 +171,35 @@ class TradingHistory:
 			self.tradelist.append(tr)
 			self.trades = copy.deepcopy(self.tradelist) #self.tradelist is the unmodified copy
 
-	# def load_fees_from_csv(self,filename="fee-calculation.csv"):
-	# 	try:
-	# 		with open( filename ) as f:
-	# 			reader = csv.reader(f)     # create a 'csv reader' from the file object
-	# 			feelist = list( reader )  # create a list from the reader 
-	# 	except Exception as e:
-	# 		raise
-	# 		feelist = []
-	# 	return feelist
+	def load_fees_from_csv(self,filename="fee-calculation.csv"):
+	 	try:
+	 		with open( filename ) as f:
+	 			reader = csv.reader(f)     # create a 'csv reader' from the file object
+	 			feelist = list( reader )  # create a list from the reader 
+	 	except Exception as e:
+	 		raise
+	 		feelist = []
+	 	return feelist
 
-	# def append_fees(self,feelist):
-	# 	feelist.pop(0) #removes first line of data list which is headings
-	# 	feelist=feelist[::-1] #inverts data list to put in time order
+	def append_fees(self,feelist):
+	 	feelist.pop(0) #removes first line of data list which is headings
+	 	feelist=feelist[::-1] #inverts data list to put in time order
 
-	# 	for trade in feelist:
-	# 		for tr in self.trades:
-	# 			if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
-	# 				tr.fee_value_gbp = float(trade[4])
-	# 				tr.currency_fee = trade[3]
-	# 				tr.fee = float(trade[2])
-	# 				break
+	 	for trade in feelist:
+	 		for tr in self.trades:
+	 			if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
+	 				tr.fee_value_gbp = float(trade[4])
+	 				tr.currency_fee = trade[3]
+	 				tr.fee = float(trade[2])
+	 				break
 		
-	# 	for trade in feelist:
-	# 		for tr in self.tradelist:
-	# 			if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
-	# 				tr.fee_value_gbp = float(trade[4])
-	# 				tr.currency_fee = trade[3]
-	# 				tr.fee = float(trade[2])
-	# 				break
+	 	for trade in feelist:
+	 		for tr in self.tradelist:
+	 			if  tr.date == datetime.strptime(trade[11], "%d.%m.%Y %H:%M") and tr.buy == float(trade[6]) and tr.sell == float(trade[8]):
+	 				tr.fee_value_gbp = float(trade[4])
+	 				tr.currency_fee = trade[3]
+	 				tr.fee = float(trade[2])
+	 				break
 
 ### Create trade list		
 trading = TradingHistory()
@@ -208,7 +208,7 @@ data = trading.load_trades_from_csv()
 
 trading.append_cointracking_trade_list(data)
 
-# feelist = trading.load_fees_from_csv()
+feelist = trading.load_fees_from_csv()
 
 # trading.append_fees(feelist)
 
