@@ -61,6 +61,8 @@ Currently we have two separately created versions. This is helping us identify p
 ##### Version 1
 To run the code, in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info. Then run the python file. You will be asked to input your rate of tax and the tax year you want to calculate gains for.
 
+If you would like to include fees in the calculation, you can do this by downloading the 'Trading Fees' list as a csv from cointracking and editing a bit of the code. What you need to do is download the feelist to the same folder as the python script and save it as fee-calculation.csv. Then in the python file uncomment the line `trading.append_fees(feelist)`.
+
 Version 1 currently doesn't output a tax report, but we will be amending this soon.
 
 ##### Version 2
