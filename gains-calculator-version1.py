@@ -26,9 +26,9 @@ def annualallowance(taxyear):
 	if taxyear==2019:
 		 return 11700
 
-taxpercentage = float(input('Enter the percentage of tax you pay on captial gains: '))
+taxpercentage = 10#float(input('Enter the percentage of tax you pay on captial gains: '))
 
-taxyear = int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
+taxyear = 2018#int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
 
 ### 2018 taxyear is 2017/18 taxyear
 def taxyearstart(taxyear):
@@ -388,6 +388,11 @@ class DetailedHistory:
 		detailedgainlist =[]
 		for z in self.gain_list:
 			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+				for attr, value in z.__dict__.items():
+					if type(value) is float and attr != "amount" and attr != "fee":
+						setattr(z, attr, round(value, 2))
+
+						
 				detailedgainlist.append(z)
 		return sorted(detailedgainlist, key=lambda gain_list: gain_list.date_sold)
 
@@ -563,13 +568,13 @@ def disposalproceeds(taxyear):
 	for z in range(0,len(taxgains.gain_list)):
 		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
 			x+=taxgains.gain_list[z].proceeds
-	return x
+	return round(x, 2)
 def costs(taxyear): # Note this should include exhange fees!
 	x=0
 	for z in range(0,len(taxgains.gain_list)):
 		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
 			x+=taxgains.gain_list[z].cost_basis
-	return x
+	return round(x, 2)
 
 number_of_disposals = taxyeardisposalscount(taxyear)
 print ("Number of Disposals =", number_of_disposals, ". Disposal Proceeds = ", disposalproceeds(taxyear), ". Allowable Costs = ", costs(taxyear))
@@ -603,9 +608,7 @@ class htmloutput():
 			
 			yield '  <tr><td>'
 			a=""
-			for x in sorted(sublist.__dict__.items(), key=operator.itemgetter(0)):
 
-				a+= '    </td><td>'+ str(x[1]) 
 			yield '    </td><td>'+ str(getattr(sublist, 'match_type')) + '    </td><td>'+ str(getattr(sublist, 'proceeds')) + '    </td><td>'+ str(getattr(sublist, 'cost_basis')) + '    </td><td>'+ str(getattr(sublist, 'fee')) + '    </td><td>'+ str(getattr(sublist, 'gain_loss')) + '    </td><td>'+ str(getattr(sublist, 'date_sold')) + '    </td><td>'+ str(getattr(sublist, 'currency')) + '    </td><td>'+ str(getattr(sublist, 'amount')) + '    </td><td>'+ str(getattr(sublist, 'sold_location')) + '    </td><td>'+ str(getattr(sublist, 'sell_number')) + '    </td><td>'+ str(getattr(sublist, 'date_acquired')) + '    </td><td>'+ str(getattr(sublist, 'bought_location')) + '    </td><td>'+ str(getattr(sublist, 'buy_number'))
 		yield '</table>'
 
