@@ -9,6 +9,8 @@ import uuid
 import random
 import copy
 
+import operator
+
 
 ##### Tax Facts
 
@@ -125,6 +127,7 @@ class Trade:
 	fee =  0
 	currency_fee = 0
 	fee_value_gbp = 0
+	exchange = 0
 	
 	def __init__(self):
 		self.id = uuid.uuid4()
@@ -167,7 +170,6 @@ class TradingHistory:
 			tr.buy_value_gbp = float(trade[5])
 			tr.buy_value_btc = float(trade[4])
 			tr.exchange = trade[11]
-		
 
 			self.tradelist.append(tr)
 			self.trades = copy.deepcopy(self.tradelist) #self.tradelist is the unmodified copy
@@ -286,6 +288,16 @@ class GainHistory:
 	def __repr__(self):
 		return str(self)
 
+	def sortedgainlist(self):
+		simplegainlist =[]
+		for z in self.gain_list:
+			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+				simplegainlist.append(z)
+		return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
+
+
+
+
 
 def mapfromtradetogainlistnumber(x):
 	for z in range(0,len(taxgains.gain_list)):
@@ -305,6 +317,88 @@ taxgains.append_gain_list()
 
 
 
+class DetailedCalculation():
+	
+	amount = 0
+	currency = 0
+	date_acquired = 0
+	date_sold = 0
+	bought_location = 0
+	sold_location = 0
+	proceeds = 0
+	cost_basis = 0
+	gain_loss = 0
+	sell_number = 0
+	buy_number = 0
+	fee = 0
+	match_type = 0
+
+
+class DetailedHistory:
+	gain_list=[]
+	def append_detailed_list(self,x,y):
+		
+		d = DetailedCalculation()
+		if trading.trades[y].buy>=trading.trades[x].sell:
+			d.amount = trading.trades[x].sell 
+		else:
+			d.amount = trading.trades[y].buy
+		d.currency = trading.tradelist[x].currency_sell
+		d.date_acquired = trading.tradelist[y].date
+		d.date_sold = trading.tradelist[x].date 
+		d.bought_location = trading.tradelist[y].exchange
+		d.sold_location = trading.tradelist[x].exchange
+		d.proceeds = trading.tradelist[x].buy_value_gbp*d.amount/trading.tradelist[x].sell #Proceeds are always calculated here using buy value!
+		if trading.trades[y].buy>=trading.trades[x].sell:
+			d.cost_basis = costbasisGBPpercoin[y]*trading.trades[x].sell
+		else:
+			d.cost_basis = costbasisGBPpercoin[y]*trading.trades[y].buy
+		d.gain_loss = d.proceeds-d.cost_basis
+		d.buy_number = y
+		d.sell_number = x
+		d.fee = trading.tradelist[x].fee_value_gbp
+		if viabledaymatch(x,y):
+			d.match_type="day"
+		else:
+			d.match_type="bnb"
+		
+
+		self.gain_list.append(d)
+
+	def append_detailed_list_avg(self,x,costbasis):
+		
+		d = DetailedCalculation()
+		d.match_type="avg"
+		d.amount = trading.trades[x].sell 
+		d.currency = trading.tradelist[x].currency_sell
+		d.date_acquired = "N/A"
+		d.date_sold = trading.tradelist[x].date 
+		d.bought_location = "N/A"
+		d.sold_location = trading.tradelist[x].exchange
+		d.proceeds = trading.trades[x].buy_value_gbp #Proceeds are always calculated here using buy value!
+		d.cost_basis = costbasis
+		d.gain_loss = d.proceeds-d.cost_basis
+		d.buy_number = "N/A"
+		d.sell_number = x
+		d.fee = trading.tradelist[x].fee_value_gbp
+
+		self.gain_list.append(d)
+		
+	def sortedgainlist(self):
+		detailedgainlist =[]
+		for z in self.gain_list:
+			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+				detailedgainlist.append(z)
+		return sorted(detailedgainlist, key=lambda gain_list: gain_list.date_sold)
+
+
+
+
+
+
+detailed_tax_list = DetailedHistory()
+
+
 ### Calculate gains on day trades using fifo
 
 def fifodays(taxyear):
@@ -319,7 +413,10 @@ def fifodays(taxyear):
 					
 					fifodaytotal += addgainsfifo(x,y) #adds gain from this pair to total
 					updatetaxcostbasis(x,y)
+					detailed_tax_list.append_detailed_list(x,y)
 					fifoupdatetradelist(x,y)
+					
+					
 				
 				y+=1
 	return(fifodaytotal)
@@ -338,7 +435,9 @@ def fifobnb(taxyear):
 
 					fifobnbtotal += addgainsfifo(x,y) #adds gain from this pair to total
 					updatetaxcostbasis(x,y)
+					detailed_tax_list.append_detailed_list(x,y)
 					fifoupdatetradelist(x,y)
+					
 				y +=1
 
 	return(fifobnbtotal)
@@ -379,6 +478,7 @@ def average_asset(taxyear,asset):
 			if taxdatecheck(x):
 			
 				averagetotal += trading.trades[x].buy_value_gbp - costbasis
+				detailed_tax_list.append_detailed_list_avg(x,costbasis)
 
 			countervalue += costbasis
 			counteramount += trading.trades[x].sell
@@ -437,7 +537,6 @@ def totaltax(taxyear):
 
 total = totaltax(taxyear)
 addgainvalues() #This has to be done after the calculation runs as the costbasis part of th
-#print(taxgains.gain_list)
 
 def check(taxyear,total):
 	x=0
@@ -475,34 +574,56 @@ def costs(taxyear): # Note this should include exhange fees!
 number_of_disposals = taxyeardisposalscount(taxyear)
 print ("Number of Disposals =", number_of_disposals, ". Disposal Proceeds = ", disposalproceeds(taxyear), ". Allowable Costs = ", costs(taxyear))
 
-taxyeargainlist = []
-for z in taxgains.gain_list:
-		if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
-			taxyeargainlist.append(z)
+
+
+detailedheadinglist=["Match Type","Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade","Date Acquired", "Location of Buy", "Number of Matched Buy Trade"]
+
 
 
 class htmloutput():
 	def simpletaxreport(self):
 		f = open('simpletaxreport.html','w')
 
-		message = str(str('\n'.join(self.html_table(taxyeargainlist))))
+		message = str(str('\n'.join(self.html_table(taxgains.sortedgainlist()))))
 
 		f.write(message)
 		f.close()
 
-	def html_table(self,lol):
+	def detailed_html_table(self,lol):
 		yield '<table>'
 		yield '  <tr><td>'
-		yield '    </td><td> Amount </td><td> Currency    </td><td> Date Acquired    </td><td> Date Sold    </td><td> Buy  Location    </td><td> Sell Location     </td><td> Proceeds    </td><td> Cost Basis    </td><td> Fee    </td><td> Gain Loss'
+		a=""
+		
+		for x in detailedheadinglist: ### Makes first line of table the headings
+
+			a+= '    </td><td>'+ str(x)
+		yield a 
 
 		for sublist in lol[::-1]:
+			
 			yield '  <tr><td>'
-			yield '    </td><td>'+str(sublist.amount) + '    </td><td>' +str(sublist.currency)+ '    </td><td>' +str(sublist.date_acquired)+ '    </td><td>' +str(sublist.date_sold)+ '    </td><td>' +str(sublist.bought_location)+ '    </td><td>' +str(sublist.sold_location)+ '    </td><td>' +str(sublist.proceeds)+ '    </td><td>' +str(sublist.cost_basis)+ '    </td><td>' +str(sublist.fee)+ '    </td><td>' +str(sublist.gain_loss)
+			a=""
+			for x in sorted(sublist.__dict__.items(), key=operator.itemgetter(0)):
+
+				a+= '    </td><td>'+ str(x[1]) 
+			yield '    </td><td>'+ str(getattr(sublist, 'match_type')) + '    </td><td>'+ str(getattr(sublist, 'proceeds')) + '    </td><td>'+ str(getattr(sublist, 'cost_basis')) + '    </td><td>'+ str(getattr(sublist, 'fee')) + '    </td><td>'+ str(getattr(sublist, 'gain_loss')) + '    </td><td>'+ str(getattr(sublist, 'date_sold')) + '    </td><td>'+ str(getattr(sublist, 'currency')) + '    </td><td>'+ str(getattr(sublist, 'amount')) + '    </td><td>'+ str(getattr(sublist, 'sold_location')) + '    </td><td>'+ str(getattr(sublist, 'sell_number')) + '    </td><td>'+ str(getattr(sublist, 'date_acquired')) + '    </td><td>'+ str(getattr(sublist, 'bought_location')) + '    </td><td>'+ str(getattr(sublist, 'buy_number'))
 		yield '</table>'
 
+
+	def detailedtaxreport(self):
+		f = open('detailedtaxreport.html','w')
+
+		message = str(str('\n'.join(self.detailed_html_table(detailed_tax_list.sortedgainlist()))))
+
+		f.write(message)
+		f.close()
 
 
 		
 htmlout = htmloutput()
 
-htmlout.simpletaxreport()
+#htmlout.simpletaxreport()
+
+htmlout.detailedtaxreport()
+
+
