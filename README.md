@@ -12,9 +12,10 @@
 ### Introduction
 Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK
 
-**The current versions only output total gains but not yet a proper tax report. We are currently working on adding this**
 
-**We have two seperate versions to help noticing errors. Version 2 is better structured code and likely what we will use in the future. At the moment it seems they both output the same values, except that version 2 recognizes gifts/hardforks as taxable events.**
+**We have two seperate versions to help noticing errors. If you find any discrepancies in the versions please let us know**
+
+**Also, note that version 2 currently recognizes gifts/hardforks as taxable events.**
 
 ### Disclaimer
 You use this code at your own discretion. We offer no guarantee that this will calculate tax exactly as HMRC requires. A fundamental reason for adopting open source methods in this project is so that people from all backgrounds can contribute, spot errors and help improve the system.
