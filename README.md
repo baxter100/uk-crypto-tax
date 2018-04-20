@@ -1,4 +1,4 @@
-## uk-crypto-tax
+## Uk Captial Gains Calculator for Cryptocurrency Trades
 
 ### Table of Contents
 1. [Introduction](#introduction)
