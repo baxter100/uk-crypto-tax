@@ -262,7 +262,15 @@ class Gain:
 
 	def __repr__(self):
 		return str(self)
+	def print_gain_html(self):
+		return '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number)
+	def print_tableheading_html(self):
+		headinglist=["Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade"]
+		a=''
+		for x in headinglist: ### Makes first line of table the headings
 
+			a+= '    </td><td>'+ str(x)
+		return a 
 class GainHistory:
 	gain_list=[]
 	def append_gain_list(self):
@@ -292,6 +300,9 @@ class GainHistory:
 		simplegainlist =[]
 		for z in self.gain_list:
 			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+				for attr, value in z.__dict__.items():
+					if type(value) is float and attr != "amount" and attr != "fee":
+						setattr(z, attr, round(value, 2))
 				simplegainlist.append(z)
 		return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
 
@@ -332,6 +343,17 @@ class DetailedCalculation():
 	buy_number = 0
 	fee = 0
 	match_type = 0
+
+	def print_gain_html(self):
+		return '    </td><td>'+ str(self.match_type) + '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number) + '    </td><td>'+ str(self.date_acquired) + '    </td><td>'+ str(self.bought_location) + '    </td><td>'+ str(self.buy_number)
+	def print_tableheading_html(self):
+		headinglist=["Match Type","Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade","Date Acquired", "Location of Buy", "Number of Matched Buy Trade"]
+		a=''
+		for x in headinglist: ### Makes first line of table the headings
+
+			a+= '    </td><td>'+ str(x)
+		return a 
+
 
 
 class DetailedHistory:
@@ -559,9 +581,11 @@ def check(taxyear,total):
 ######### Facts needed for self-assesment
 def taxyeardisposalscount(taxyear):
 	x=0
+	sells = []
 	for z in range(0,len(taxgains.gain_list)):
-		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
+		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear) and taxgains.gain_list[z].sell_number not in sells:
 			x+=1
+			sells.append(taxgains.gain_list[z].sell_number)
 	return x
 def disposalproceeds(taxyear):
 	x=0
@@ -581,7 +605,6 @@ print ("Number of Disposals =", number_of_disposals, ". Disposal Proceeds = ", d
 
 
 
-detailedheadinglist=["Match Type","Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade","Date Acquired", "Location of Buy", "Number of Matched Buy Trade"]
 
 
 
@@ -594,29 +617,24 @@ class htmloutput():
 		f.write(message)
 		f.close()
 
-	def detailed_html_table(self,lol):
+	def html_table(self,reportlist):
 		yield '<table>'
-		yield '  <tr><td>'
-		a=""
+		yield '  <tr><td>'		
 		
-		for x in detailedheadinglist: ### Makes first line of table the headings
+		yield reportlist[0].print_tableheading_html() 
 
-			a+= '    </td><td>'+ str(x)
-		yield a 
-
-		for sublist in lol[::-1]:
+		for gain in reportlist[::-1]:
 			
 			yield '  <tr><td>'
-			a=""
 
-			yield '    </td><td>'+ str(getattr(sublist, 'match_type')) + '    </td><td>'+ str(getattr(sublist, 'proceeds')) + '    </td><td>'+ str(getattr(sublist, 'cost_basis')) + '    </td><td>'+ str(getattr(sublist, 'fee')) + '    </td><td>'+ str(getattr(sublist, 'gain_loss')) + '    </td><td>'+ str(getattr(sublist, 'date_sold')) + '    </td><td>'+ str(getattr(sublist, 'currency')) + '    </td><td>'+ str(getattr(sublist, 'amount')) + '    </td><td>'+ str(getattr(sublist, 'sold_location')) + '    </td><td>'+ str(getattr(sublist, 'sell_number')) + '    </td><td>'+ str(getattr(sublist, 'date_acquired')) + '    </td><td>'+ str(getattr(sublist, 'bought_location')) + '    </td><td>'+ str(getattr(sublist, 'buy_number'))
+			yield gain.print_gain_html() #'    </td><td>'+ str(getattr(sublist, 'match_type')) + '    </td><td>'+ str(getattr(sublist, 'proceeds')) + '    </td><td>'+ str(getattr(sublist, 'cost_basis')) + '    </td><td>'+ str(getattr(sublist, 'fee')) + '    </td><td>'+ str(getattr(sublist, 'gain_loss')) + '    </td><td>'+ str(getattr(sublist, 'date_sold')) + '    </td><td>'+ str(getattr(sublist, 'currency')) + '    </td><td>'+ str(getattr(sublist, 'amount')) + '    </td><td>'+ str(getattr(sublist, 'sold_location')) + '    </td><td>'+ str(getattr(sublist, 'sell_number')) + '    </td><td>'+ str(getattr(sublist, 'date_acquired')) + '    </td><td>'+ str(getattr(sublist, 'bought_location')) + '    </td><td>'+ str(getattr(sublist, 'buy_number'))
 		yield '</table>'
 
 
 	def detailedtaxreport(self):
 		f = open('detailedtaxreport.html','w')
 
-		message = str(str('\n'.join(self.detailed_html_table(detailed_tax_list.sortedgainlist()))))
+		message = str(str('\n'.join(self.html_table(detailed_tax_list.sortedgainlist()))))
 
 		f.write(message)
 		f.close()
@@ -625,7 +643,7 @@ class htmloutput():
 		
 htmlout = htmloutput()
 
-#htmlout.simpletaxreport()
+htmlout.simpletaxreport()
 
 htmlout.detailedtaxreport()
 
