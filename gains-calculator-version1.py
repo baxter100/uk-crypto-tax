@@ -42,7 +42,8 @@ def taxdatecheck(x):
 		return True
 
 
-
+#### List of possible fiat currencies
+fiat_list = ["GBP", "EUR"]
 
 ##### Fifo calculations
 
@@ -101,16 +102,6 @@ def viablebnbmatch(x,y):
 
 #### Tax Reporting Part
 
-def updatetaxcostbasis(x,y):
-
-	if trading.trades[y].buy>=trading.trades[x].sell:
-		taxgains.gain_list[mapfromtradetogainlistnumber(x)].cost_basis += costbasisGBPpercoin[y]*trading.trades[x].sell
-	else:
-		taxgains.gain_list[mapfromtradetogainlistnumber(x)].cost_basis += costbasisGBPpercoin[y]*trading.trades[y].buy
-
-def addgainvalues():
-	for z in range(0,len(taxgains.gain_list)):
-		taxgains.gain_list[z].gain_loss = taxgains.gain_list[z].proceeds - taxgains.gain_list[z].cost_basis
 
 
 class Trade:
@@ -140,7 +131,18 @@ class Trade:
 
 
 class TradingHistory:
-	tradelist = []
+	tradelist = [] #unmodified list of trades
+	trades = [] #copy that gets modified as calculation runs
+	crypto_list = [] #list of cryptos involved in trade
+
+	def populate_crypto_list(self):
+		for tradenumber in range(0,len(self.tradelist)):
+			
+			if self.tradelist[tradenumber].currency_buy not in self.crypto_list and self.tradelist[tradenumber].currency_buy !="GBP" and self.tradelist[tradenumber].currency_buy!="EUR" :
+				self.crypto_list.append(self.tradelist[tradenumber].currency_buy)
+			if self.tradelist[tradenumber].currency_sell not in self.crypto_list and self.tradelist[tradenumber].currency_sell !="GBP" and self.tradelist[tradenumber].currency_sell!="EUR" :
+				self.crypto_list.append(self.tradelist[tradenumber].currency_sell)
+
 	def load_trades_from_csv(self,filename="trade-list.csv"):
 		try:
 			with open( filename ) as f:
@@ -210,6 +212,7 @@ trading = TradingHistory()
 data = trading.load_trades_from_csv()
 
 trading.append_cointracking_trade_list(data)
+trading.populate_crypto_list()
 
 feelist = trading.load_fees_from_csv()
 
@@ -228,17 +231,9 @@ for tradenumber in range(0,len(data)):
 		else:
 			valueofsalepercoin.append(trading.trades[tradenumber].buy_value_gbp/trading.trades[tradenumber].sell)
 
-#### List of possible fiat currencies
-fiat_list = ["GBP", "EUR"]
 
-### Populate list of cryptos used
-crypto_list = []
-for tradenumber in range(0,len(data)):
-		
-		if trading.trades[tradenumber].currency_buy not in crypto_list and trading.trades[tradenumber].currency_buy !="GBP" and trading.trades[tradenumber].currency_buy!="EUR" :
-			crypto_list.append(trading.trades[tradenumber].currency_buy)
-		if trading.trades[tradenumber].currency_sell not in crypto_list and trading.trades[tradenumber].currency_sell !="GBP" and trading.trades[tradenumber].currency_sell!="EUR" :
-			crypto_list.append(trading.trades[tradenumber].currency_sell)
+
+
 
 
 
@@ -306,16 +301,26 @@ class GainHistory:
 				simplegainlist.append(z)
 		return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
 
+	def updatetaxcostbasis(self,x,y):
+
+		if trading.trades[y].buy>=trading.trades[x].sell:
+			self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += costbasisGBPpercoin[y]*trading.trades[x].sell
+		else:
+			self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += costbasisGBPpercoin[y]*trading.trades[y].buy
+
+	def addgainvalues(self):
+		for z in range(0,len(self.gain_list)):
+			self.gain_list[z].gain_loss = self.gain_list[z].proceeds - self.gain_list[z].cost_basis
 
 
+	def mapfromtradetogainlistnumber(self,x):
+		for z in range(0,len(self.gain_list)):
+			if self.gain_list[z].sell_number==x:
+				return int(z)
+				break
 
-
-def mapfromtradetogainlistnumber(x):
-	for z in range(0,len(taxgains.gain_list)):
-		if taxgains.gain_list[z].sell_number==x:
-			return int(z)
-			break
-
+	def updatetaxcostbasisavg(self,x,costbasis):
+		self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += costbasis
 
 
 
@@ -439,7 +444,7 @@ def fifodays(taxyear):
 				if viabledaymatch(x,y): #if dates and currencies match appropriately
 					
 					fifodaytotal += addgainsfifo(x,y) #adds gain from this pair to total
-					updatetaxcostbasis(x,y)
+					taxgains.updatetaxcostbasis(x,y)
 					detailed_tax_list.append_detailed_list(x,y)
 					fifoupdatetradelist(x,y)
 					
@@ -461,7 +466,7 @@ def fifobnb(taxyear):
 				if viablebnbmatch(x,y):
 
 					fifobnbtotal += addgainsfifo(x,y) #adds gain from this pair to total
-					updatetaxcostbasis(x,y)
+					taxgains.updatetaxcostbasis(x,y)
 					detailed_tax_list.append_detailed_list(x,y)
 					fifoupdatetradelist(x,y)
 					
@@ -470,8 +475,6 @@ def fifobnb(taxyear):
 	return(fifobnbtotal)
 
 
-def updatetaxcostbasisavg(x,costbasis):
-	taxgains.gain_list[mapfromtradetogainlistnumber(x)].cost_basis += costbasis
 
 ### Calculate gains on trades using 404 holdings rule
 def averagecostbasisuptotrade(x,countervalue,counteramount):
@@ -501,7 +504,7 @@ def average_asset(taxyear,asset):
 		if trading.trades[x].currency_sell==asset and viablesellcurrency(x):
 			
 			costbasis = averagecostbasisuptotrade(x,countervalue,counteramount)*trading.trades[x].sell
-			updatetaxcostbasisavg(x,costbasis)
+			taxgains.updatetaxcostbasisavg(x,costbasis)
 			if taxdatecheck(x):
 			
 				averagetotal += trading.trades[x].buy_value_gbp - costbasis
@@ -515,7 +518,7 @@ def average_asset(taxyear,asset):
 
 def average(taxyear):
 	averagetotal=0
-	for asset in crypto_list:
+	for asset in trading.crypto_list:
 		averagetotal += average_asset(taxyear,asset)
 		
 	return averagetotal
@@ -563,7 +566,7 @@ def totaltax(taxyear):
 
 
 total = totaltax(taxyear)
-addgainvalues() #This has to be done after the calculation runs as the costbasis part of th
+taxgains.addgainvalues() #This has to be done after the calculation runs as the costbasis part of th
 
 def check(taxyear,total):
 	x=0
