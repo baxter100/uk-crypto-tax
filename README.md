@@ -76,7 +76,7 @@ Getting strange results? There's a few things you might want to try:
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
 * Which version of python are you using? You need to be using version 3!
 * Which fiat currencies have you been trading in? The program currently only considers GBP as fiat, so if you have trades in other fiat currencies you're likely to get strange results.
-* Are you getting a UnicodeDecodeError? The filename that you get from cointracking contains nasty characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
+* Are you getting a UnicodeDecodeError? (1) In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. (2) Also, the filename that you get from cointracking contains nasty characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
 
 If you get any error messages when running the code, get in touch!
 
