@@ -60,14 +60,14 @@ For guidance installing python3 on your machine see https://wiki.python.org/moin
 Currently we have two separately created versions. This is helping us identify problems and mistakes. The two versions are more or less the same, though currently version two considers gifting/hard forks as a taxable event. Further, version two is likely the structure we will use in the end as it will be easier to incorporate a tax report.
 
 ##### Version 1
-To run the code, in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info. Then run the python file. You will be asked to input your rate of tax and the tax year you want to calculate gains for.
+To run the code first make sure your csv file is in the same folder as the python file and change the name of your csv file to "trade-list.csv" (Or, alternatively in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info). Then run the python file. You will be asked to input your rate of tax and the tax year you want to calculate gains for.
 
 If you would like to include fees in the calculation, you can do this by downloading the 'Trading Fees' list as a csv from cointracking and editing a bit of the code. What you need to do is download the feelist to the same folder as the python script and save it as fee-calculation.csv. Then in the python file uncomment the line `trading.append_fees(feelist)`.
 
 Version 1 currently outputs a detailed list of gains calculations as a html file which you will be able to view with your browser.
 
 ##### Version 2
-On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chanbge trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
+On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. change trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
 
 ### Troubleshooting
 Getting strange results? There's a few things you might want to try:
@@ -76,6 +76,7 @@ Getting strange results? There's a few things you might want to try:
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
 * Which version of python are you using? You need to be using version 3!
 * Which fiat currencies have you been trading in? The program currently only considers GBP as fiat, so if you have trades in other fiat currencies you're likely to get strange results.
+* Are you getting a UnicodeDecodeError? The filename that you get from cointracking contains nasty characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
 
 If you get any error messages when running the code, get in touch!
 
