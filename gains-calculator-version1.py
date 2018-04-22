@@ -214,7 +214,7 @@ data = trading.load_trades_from_csv()
 trading.append_cointracking_trade_list(data)
 trading.populate_crypto_list()
 
-feelist = trading.load_fees_from_csv()
+#feelist = trading.load_fees_from_csv()
 
 
 #trading.append_fees(feelist)
