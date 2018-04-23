@@ -48,7 +48,7 @@ There are basically four steps to getting this running:
 
 #### Creating an appropriate trade list
 
-Currently **the program requires a csv file formatted in a specific way including all trades with GBP values --- see sample-trade-list.csv**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). If you are stitching multiple lists together, make sure the trades are still in chronological order.
+Currently **the program requires a csv file formatted in a specific way including all trades with GBP values --- see sample-trade-list.csv**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). **Make sure you rename the file to trade-list.csv**. If you are stitching multiple lists together, make sure the trades are still in chronological order.
 
 #### Installing python3
 Installing Python is generally easy, and nowadays many Linux and UNIX distributions include a recent Python. Even some Windows computers (notably those from HP) now come with Python already installed.
@@ -76,7 +76,8 @@ Getting strange results? There's a few things you might want to try:
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
 * Which version of python are you using? You need to be using version 3!
 * Which fiat currencies have you been trading in? The program currently only considers GBP as fiat, so if you have trades in other fiat currencies you're likely to get strange results.
-* Are you getting a UnicodeDecodeError? (1) In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. (2) Also, the filename that you get from cointracking contains nasty characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
+* Are you getting a UnicodeDecodeError? (1) In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. 
+* SyntaxError: Non-ASCII character '\xc2'. The filename that you get from cointracking contains nasty non-ascii characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
 
 If you get any error messages when running the code, get in touch!
 
