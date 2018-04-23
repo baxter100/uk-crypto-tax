@@ -70,16 +70,20 @@ Version 1 currently outputs a detailed list of gains calculations as a html file
 On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. change trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
 
 ### Troubleshooting
-Getting strange results? There's a few things you might want to try:
+#### Getting strange results? 
 
 * Have you checked both version 1 and 2? Gifts are added to your gains in v2 so this may be giving you a larger figure than expected
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
-* Which version of python are you using? You need to be using version 3!
 * Which fiat currencies have you been trading in? The program currently only considers GBP as fiat, so if you have trades in other fiat currencies you're likely to get strange results.
-* Are you getting a UnicodeDecodeError? (1) In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. 
-* SyntaxError: Non-ASCII character '\xc2'. The filename that you get from cointracking contains nasty non-ascii characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
 
-If you get any error messages when running the code, get in touch!
+#### Errors? 
+
+* Are you getting a UnicodeDecodeError? In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. 
+* SyntaxError: Non-ASCII character '\xc2'. The filename that you get from cointracking contains nasty non-ascii characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
+* Which version of python are you using? You need to be using version 3!
+* How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
+
+If you get any error messages when running the code and can't figure out what's going on, get in touch!
 
 
 ### Donations
@@ -114,3 +118,6 @@ ETC: 0x5e7a73447cce4978c2a1fdde1b9c7e6e5dc84be8
 * Improve the program to output a more comprehensive tax report
 * Create a nicer user interface
 * Take input from different sources directly like Poloniex, Localbitcoin, kraken etc.. so cointracking isn't required
+
+### Contact
+https://www.reddit.com/user/uk-crypto-tax/
