@@ -80,8 +80,8 @@ On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chan
 #### Errors? 
 
 * Are you getting a UnicodeDecodeError? In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. 
-* SyntaxError: Non-ASCII character '\xc2'. The filename that you get from cointracking contains nasty non-ascii characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
-* Which version of python are you using? You need to be using version 3!
+* SyntaxError: Non-ASCII character '\xc2'. Which version of python are you using? You need to be using version 3!
+* The filename that you get from cointracking contains nasty non-ascii characters, so try changing the csv filename to something like "trade-list.csv" and, again, make sure `filename="trade-list.csv"` points to the correct file.
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
 
 If you get any error messages when running the code and can't figure out what's going on, get in touch!
