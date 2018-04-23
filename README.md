@@ -8,6 +8,7 @@
 5. [Troubleshooting](#troubleshooting)
 6. [Donations](#donations)
 7. [Future Developments](#future-developments)
+8. [Contact](#contact)
 
 ### Introduction
 Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK
