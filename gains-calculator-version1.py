@@ -259,15 +259,10 @@ class Gain:
 		return str(self)
 	def print_gain_html(self):
 		return '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number)
-	def print_tableheading_html(self):
-		headinglist=["Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade"]
-		a=''
-		for x in headinglist: ### Makes first line of table the headings
 
-			a+= '    </td><td>'+ str(x)
-		return a 
 class GainHistory:
 	gain_list=[]
+	sortedgainlist =[]
 	def append_gain_list(self):
 		
 		for x in range(0,len(data)):
@@ -291,15 +286,15 @@ class GainHistory:
 	def __repr__(self):
 		return str(self)
 
-	def sortedgainlist(self):
-		simplegainlist =[]
-		for z in self.gain_list:
-			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
-				for attr, value in z.__dict__.items():
-					if type(value) is float and attr != "amount":
-						setattr(z, attr, round(value, 2))
-				simplegainlist.append(z)
-		return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
+	# def sortedgainlist(self):
+	# 	simplegainlist =[]
+	# 	for z in self.gain_list:
+	# 		if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+	# 			for attr, value in z.__dict__.items():
+	# 				if type(value) is float and attr != "amount":
+	# 					setattr(z, attr, round(value, 2))
+	# 			simplegainlist.append(z)
+	# 	return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
 
 	def updatetaxcostbasis(self,x,y):
 
@@ -322,6 +317,27 @@ class GainHistory:
 	def updatetaxcostbasisavg(self,x,costbasis):
 		self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += costbasis
 
+	def append_sortedgainlist(self):
+
+		for z in self.gain_list:
+			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
+				for attr, value in z.__dict__.items():
+					if type(value) is float and attr != "amount":
+						setattr(z, attr, round(value, 2))
+
+						
+				self.sortedgainlist.append(z)
+
+		self.sortedgainlist  = sorted(self.sortedgainlist, key=lambda gain_list: gain_list.date_sold)
+
+	def print_tableheading_html(self):
+		headinglist=["Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade"]
+		a=''
+		for x in headinglist: ### Makes first line of table the headings
+
+			a+= '    </td><td>'+ str(x)
+		return a 
+
 
 
 
@@ -330,7 +346,7 @@ class GainHistory:
 taxgains = GainHistory()
 
 taxgains.append_gain_list()
-
+taxgains.append_sortedgainlist()
 
 
 class DetailedCalculation():
@@ -351,18 +367,13 @@ class DetailedCalculation():
 
 	def print_gain_html(self):
 		return '    </td><td>'+ str(self.match_type) + '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number) + '    </td><td>'+ str(self.date_acquired) + '    </td><td>'+ str(self.bought_location) + '    </td><td>'+ str(self.buy_number)
-	def print_tableheading_html(self):
-		headinglist=["Match Type","Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade","Date Acquired", "Location of Buy", "Number of Matched Buy Trade"]
-		a=''
-		for x in headinglist: ### Makes first line of table the headings
 
-			a+= '    </td><td>'+ str(x)
-		return a 
 
 
 
 class DetailedHistory:
 	gain_list=[]
+	sortedgainlist = []
 	def append_detailed_list(self,x,y):
 		
 		d = DetailedCalculation()
@@ -411,8 +422,8 @@ class DetailedHistory:
 
 		self.gain_list.append(d)
 		
-	def sortedgainlist(self):
-		detailedgainlist =[]
+	def append_sortedgainlist(self):
+
 		for z in self.gain_list:
 			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
 				for attr, value in z.__dict__.items():
@@ -420,8 +431,17 @@ class DetailedHistory:
 						setattr(z, attr, round(value, 2))
 
 						
-				detailedgainlist.append(z)
-		return sorted(detailedgainlist, key=lambda gain_list: gain_list.date_sold)
+				self.sortedgainlist.append(z)
+
+		self.sortedgainlist  = sorted(self.sortedgainlist, key=lambda gain_list: gain_list.date_sold)
+
+	def print_tableheading_html(self):
+		headinglist=["Match Type","Proceeds","Cost Basis","Fee","Gain/Loss",   "Date Sold", "Currency", "Amount Sold", "Location of Sale", "Number of Sell Trade","Date Acquired", "Location of Buy", "Number of Matched Buy Trade"]
+		a=''
+		for x in headinglist: ### Makes first line of table the headings
+
+			a+= '    </td><td>'+ str(x)
+		return a 
 
 
 
@@ -549,7 +569,10 @@ def totalgain(taxyear):
 	taxablegain = round(days + bnb +avg - feetotal - annualallowance(taxyear), 2)
 	
 	print("Gain from days: £",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total value of fees paid in GBP: £",feetotal,"Total Capital Gains for ",taxyear-1,"/",taxyear,": £",round(days+bnb+avg-feetotal, 2))
-	print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £",taxablegain)
+	if taxablegain > 0:
+		print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £",taxablegain)
+	else:
+		print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £",0)
 	return days + bnb +avg -feetotal
 
 def taxablegain(taxyear):
@@ -557,7 +580,11 @@ def taxablegain(taxyear):
 
 def totaltax(taxyear):
 	total = totalgain(taxyear)
-	print("Total tax owed at",taxpercentage,"% tax rate: £",round((total-annualallowance(taxyear))*taxpercentage/100, 2))
+	totaltaxowed = (total-annualallowance(taxyear))*taxpercentage/100
+	if totaltaxowed > 0:
+		print("Total tax owed at",taxpercentage,"% tax rate: £",round((total-annualallowance(taxyear))*taxpercentage/100, 2))
+	else:
+		print("Total tax owed at",taxpercentage,"% tax rate: £",0)
 	return total
 	
 
@@ -566,7 +593,14 @@ def totaltax(taxyear):
 
 
 total = totaltax(taxyear)
-taxgains.addgainvalues() #This has to be done after the calculation runs as the costbasis part of th
+
+################# These have to be done after calculation runs
+
+taxgains.addgainvalues() 
+detailed_tax_list.append_sortedgainlist()
+
+
+##########################
 
 def check(taxyear,total):
 	x=0
@@ -613,20 +647,20 @@ print ("Number of Disposals =", number_of_disposals, ". Disposal Proceeds = ", d
 
 class htmloutput():
 	def simpletaxreport(self):
-		f = open('simpletaxreport.html','w')
+		f = open(str(taxyear-1)+'-'+str(taxyear)+'_simpletaxreport.html','w')
 
-		message = str(str('\n'.join(self.html_table(taxgains.sortedgainlist()))))
+		message = str(str('\n'.join(self.html_table(taxgains))))
 
 		f.write(message)
 		f.close()
 
-	def html_table(self,reportlist):
+	def html_table(self,history):
 		yield '<table>'
 		yield '  <tr><td>'		
 		
-		yield reportlist[0].print_tableheading_html() 
+		yield history.print_tableheading_html() 
 
-		for gain in reportlist[::-1]:
+		for gain in history.sortedgainlist[::-1]:
 			
 			yield '  <tr><td>'
 
@@ -635,9 +669,9 @@ class htmloutput():
 
 
 	def detailedtaxreport(self):
-		f = open('detailedtaxreport.html','w')
+		f = open(str(taxyear-1)+'-'+str(taxyear)+'_detailedtaxreport.html','w')
 
-		message = str(str('\n'.join(self.html_table(detailed_tax_list.sortedgainlist()))))
+		message = str(str('\n'.join(self.html_table(detailed_tax_list))))
 
 		f.write(message)
 		f.close()
