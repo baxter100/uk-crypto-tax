@@ -145,7 +145,7 @@ class TradingHistory:
 
 	def load_trades_from_csv(self,filename="trade-list.csv"):
 		try:
-			with open( filename ) as f:
+			with open( filename, encoding='utf-8' ) as f:
 				reader = csv.reader(f)     # create a 'csv reader' from the file object
 				datalist = list( reader )  # create a list from the reader 
 		except Exception as e:
@@ -158,7 +158,7 @@ class TradingHistory:
 		datalist=datalist[::-1] #inverts data list to put in time order
 		
 		for trade in datalist:
-			for x in [6,8,9]: #"-" in gift trades weren't able to be converted in floats so was messing things up
+			for x in [2,4,5,6,8,9]: #"-" in gift trades weren't able to be converted in floats so was messing things up
 				if trade[x]=="-":
 					trade[x]=0
 			tr = Trade()
@@ -178,7 +178,7 @@ class TradingHistory:
 
 	def load_fees_from_csv(self,filename="fee-calculation.csv"):
 		try:
-			with open( filename ) as f:
+			with open( filename, encoding='utf-8' ) as f:
 				reader = csv.reader(f)     # create a 'csv reader' from the file object
 				feelist = list( reader )  # create a list from the reader 
 		except Exception as e:
@@ -296,7 +296,7 @@ class GainHistory:
 		for z in self.gain_list:
 			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
 				for attr, value in z.__dict__.items():
-					if type(value) is float and attr != "amount" and attr != "fee":
+					if type(value) is float and attr != "amount":
 						setattr(z, attr, round(value, 2))
 				simplegainlist.append(z)
 		return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
@@ -416,7 +416,7 @@ class DetailedHistory:
 		for z in self.gain_list:
 			if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
 				for attr, value in z.__dict__.items():
-					if type(value) is float and attr != "amount" and attr != "fee":
+					if type(value) is float and attr != "amount":
 						setattr(z, attr, round(value, 2))
 
 						
