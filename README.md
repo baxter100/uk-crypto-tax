@@ -65,7 +65,36 @@ To run the code first make sure your csv file is in the same folder as the pytho
 
 If you would like to include fees in the calculation, you can do this by downloading the 'Trading Fees' list as a csv from cointracking and editing a bit of the code. What you need to do is download the feelist to the same folder as the python script and save it as fee-calculation.csv. Then in the python file uncomment the line `trading.append_fees(feelist)`.
 
-Version 1 currently outputs a detailed list of gains calculations as a html file which you will be able to view with your browser.
+Version 1 currently outputs a two lists of gains calculations as a html file which you will be able to view with your browser. Explained below:
+
+##### Simple Report
+The simple report contains a list of all sales of cryptocurrency assets including 
+* Proceeds: The GBP value of proceeds of the sale. This is calculated as the GBP value of the assets acquired at the time of the sale
+* Cost basis: The GBP value of the cost basis for that sale
+* Fee: The GBP value of fee paid for that sale. 
+* Gain/loss: The GBP value of gain/loss
+* Date sold. 
+* Currency: The abbreviation of the crytocurrency that was sold.
+* Amount sold: The amount of the cryptocurrency sold
+* Location of sale: Which exchange the sale was made on
+* Number of sell trade: The buys/sells are ordered by number, 1 being the first buy/sell
+
+##### Detailed Report
+The detailed report gives a list of sales which are broken down to show how they have been matched. The columns are as follows:
+* Match Type: This indicates which rule was used to match the asset in the sale/how the cost-basis is calculated. “avg” indicates the cost basis is calculated from the value of the holdings. “bnb” indicates the cost basis is calculated from a correspending buy within 30 days. “day” indicates the cost basis is calculated from a corresponding buy on the same day
+* Proceeds: The GBP value of proceeds of the relevant portion of the sale. This is calculated using the GBP value of the assets acquired at the time of the sale.
+* Cost basis: The GBP value of the cost basis for the relevant portion of the sale
+* Fee: The GBP value of fee paid for that sale. NOTE: These are duplicated over split trades
+* Gain/loss: The GBP value of gain/loss for the relevant portion of the sale
+* Date sold. 
+* Currency: The abbreviation of the crytocurrency that was sold
+* Amount sold: The amount of the cryptocurrency sold for the relevant portion of the sale
+* Location of sale: Which exchange the sale was made on
+* Number of sell trade: The buys/sells are ordered by number, 1 being the first buy/sell
+Then, if possible (i.e. a ‘day’ or ‘bnb’ match) the details of the corresponding buy are also given:
+* Date acquired: The date on which the cryptocurrency was bought
+* Location of Buy: which exchange the cryptocurrency was bought on
+* Number of matched buy trade: This indicates which buy trade the sell trade has been matched with
 
 ##### Version 2
 On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. change trade-list.csv to point to your trade list and run `print("new ",tax_calculator.calculateUKTax(2018))`
