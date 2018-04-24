@@ -82,6 +82,7 @@ On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chan
 * Are you getting a UnicodeDecodeError? In the load_trades_from_csv function in the TradingHistory class, where it says open( filename ). If you change this to open( filename, encoding='utf-8' ) this should solve your problem. 
 * SyntaxError: Non-ASCII character '\xc2'. Which version of python are you using? You need to be using version 3!
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
+* ValueError: could not convert string to float. It may be that your trade list is not correctly formatted, see https://github.com/baxter100/uk-crypto-tax/blob/master/sample-trade-list.csv.
 
 If you get any error messages when running the code and can't figure out what's going on, get in touch!
 
