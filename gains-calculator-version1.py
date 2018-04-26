@@ -12,6 +12,9 @@ import copy
 import operator
 
 
+####### csv filename
+tradelist_filename = "trade-list.csv"
+
 ##### Tax Facts
 
 def annualallowance(taxyear):
@@ -50,12 +53,16 @@ fiat_list = ["GBP", "EUR"]
 ### Calculate gain when two trades have been matched
 def gainpair(x,y): #Given a pair of trades, returns the capital gain
 	if trading.trades[y].buy>=trading.trades[x].sell:
-
-		return trading.trades[x].buy_value_gbp*trading.trades[x].sell/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[x].sell
+		if trading.trades[x].buy_value_gbp==0: #necessary because of gifts/tips
+			return trading.trades[x].sell_value_gbp - costbasisGBPpercoin[y]*trading.trades[x].sell
+		else:
+			return trading.trades[x].buy_value_gbp - costbasisGBPpercoin[y]*trading.trades[x].sell
 		
 	else:
-
-		return trading.trades[x].buy_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
+		if trading.trades[x].buy_value_gbp==0: #necessary because of gifts/tips
+			return trading.trades[x].sell_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
+		else:
+			return trading.trades[x].buy_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
 
 def addgainsfifo(x,y): #adds gains from pair to total if tax year is correct
 	if taxdatecheck(x):
@@ -143,7 +150,7 @@ class TradingHistory:
 			if self.tradelist[tradenumber].currency_sell not in self.crypto_list and self.tradelist[tradenumber].currency_sell !="GBP" and self.tradelist[tradenumber].currency_sell!="EUR" :
 				self.crypto_list.append(self.tradelist[tradenumber].currency_sell)
 
-	def load_trades_from_csv(self,filename="trade-list.csv"):
+	def load_trades_from_csv(self,filename=tradelist_filename):
 		try:
 			with open( filename, encoding='utf-8' ) as f:
 				reader = csv.reader(f)     # create a 'csv reader' from the file object
@@ -175,6 +182,8 @@ class TradingHistory:
 
 			self.tradelist.append(tr)
 			self.trades = copy.deepcopy(self.tradelist) #self.tradelist is the unmodified copy
+
+
 
 	def load_fees_from_csv(self,filename="fee-calculation.csv"):
 		try:
@@ -214,18 +223,22 @@ data = trading.load_trades_from_csv()
 trading.append_cointracking_trade_list(data)
 trading.populate_crypto_list()
 
+######### Uncomment below if you've added a feelist from cointracking and saved it in the same folder, as "fee-calculation.csv"
 #feelist = trading.load_fees_from_csv()
 
 
 #trading.append_fees(feelist)
-
+############
 
 ### Populate list of values and cost basis prior to editing list, this shouldn't be necessary once deep copying is used
 valueofsalepercoin = []
 costbasisGBPpercoin = []
 
 for tradenumber in range(0,len(data)):
-		costbasisGBPpercoin.append(trading.trades[tradenumber].sell_value_gbp/trading.trades[tradenumber].buy)
+		if trading.trades[tradenumber].buy == 0:
+			pass
+		else:
+			costbasisGBPpercoin.append(trading.trades[tradenumber].sell_value_gbp/trading.trades[tradenumber].buy)
 		if trading.trades[tradenumber].sell==0:
 			valueofsalepercoin.append(0)
 		else:
@@ -275,7 +288,10 @@ class GainHistory:
 				ga.date_sold = trading.tradelist[x].date 
 				ga.bought_location = "?"
 				ga.sold_location = trading.tradelist[x].exchange
-				ga.proceeds = trading.tradelist[x].buy_value_gbp #Proceeds are always calculated here using buy value!
+				if trading.trades[x].buy_value_gbp == 0: #It is necessary to use sell value when calculating gains on gifts
+					ga.proceeds = trading.trades[x].sell_value_gbp
+				else:
+					ga.proceeds = trading.trades[x].buy_value_gbp #Proceeds are always calculated here using buy value!
 				ga.cost_basis = 0
 				ga.gain_loss = 0
 				ga.sell_number = x
@@ -346,7 +362,6 @@ class GainHistory:
 taxgains = GainHistory()
 
 taxgains.append_gain_list()
-taxgains.append_sortedgainlist()
 
 
 class DetailedCalculation():
@@ -413,7 +428,10 @@ class DetailedHistory:
 		d.date_sold = trading.tradelist[x].date 
 		d.bought_location = "N/A"
 		d.sold_location = trading.tradelist[x].exchange
-		d.proceeds = trading.trades[x].buy_value_gbp #Proceeds are always calculated here using buy value!
+		if trading.trades[x].buy_value_gbp == 0:
+			d.proceeds = trading.trades[x].sell_value_gbp
+		else:
+			d.proceeds = trading.trades[x].buy_value_gbp #Proceeds are always calculated here using buy value!
 		d.cost_basis = costbasis
 		d.gain_loss = d.proceeds-d.cost_basis
 		d.buy_number = "N/A"
@@ -511,8 +529,6 @@ def averagecostbasisuptotrade(x,countervalue,counteramount):
 		return (t- countervalue)/(q - counteramount)
 
 
-def averagegain(x):
-	return trading.trades[x].buy_value_gbp - averagecostbasisuptotrade(x)*trading.trades[x].sell - taxgains.gain_list[x].fee
 
 	
 
@@ -526,8 +542,10 @@ def average_asset(taxyear,asset):
 			costbasis = averagecostbasisuptotrade(x,countervalue,counteramount)*trading.trades[x].sell
 			taxgains.updatetaxcostbasisavg(x,costbasis)
 			if taxdatecheck(x):
-			
-				averagetotal += trading.trades[x].buy_value_gbp - costbasis
+				if trading.trades[x].buy_value_gbp==0: ## Necessary to add this to deal with gifts/tips
+					averagetotal += trading.trades[x].sell_value_gbp - costbasis
+				else:
+					averagetotal += trading.trades[x].buy_value_gbp - costbasis
 				detailed_tax_list.append_detailed_list_avg(x,costbasis)
 
 			countervalue += costbasis
@@ -554,66 +572,62 @@ def sumfees(taxyear):
 
 		
 
+######Calculating Section
+days=round(fifodays(taxyear), 2)
+bnb = round(fifobnb(taxyear), 2)
+avg = round(average(taxyear), 2)
+feetotal = round(sumfees(taxyear), 2)
+totalgain = round(days + bnb +avg -feetotal, 2)
+taxablegain = round(totalgain-annualallowance(taxyear),2)
+totaltax = taxablegain*taxpercentage/100
 
 
-def totalgain(taxyear):
+########## Reporting Section
+def printinfo(taxyear):
 	for x in range(0,len(data)): ### Print warning to contact HMRC
 		if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
 			print("Sale:",x," has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom")
-		
-	days = round(fifodays(taxyear), 2)
-	bnb = round(fifobnb(taxyear), 2)
-	avg = round(average(taxyear), 2)
-	feetotal = round(sumfees(taxyear), 2)
 	
-	taxablegain = round(days + bnb +avg - feetotal - annualallowance(taxyear), 2)
-	
-	print("Gain from days: £",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total value of fees paid in GBP: £",feetotal,"Total Capital Gains for ",taxyear-1,"/",taxyear,": £",round(days+bnb+avg-feetotal, 2))
+	print("Gain from days: £ ",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total value of fees paid in GBP: £ ",feetotal,"Total Capital Gains for ",taxyear-1,"/",taxyear,": £ ",round(days+bnb+avg-feetotal, 2))
 	if taxablegain > 0:
-		print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £",taxablegain)
+		print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £ ",taxablegain)
 	else:
-		print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £",0)
-	return days + bnb +avg -feetotal
+		print("Total Taxable Gain for ",taxyear-1,"/",taxyear," for 'normal' people: £ ",0)
 
-def taxablegain(taxyear):
-	return totalgain(taxyear) -annualallowance(taxyear)
-
-def totaltax(taxyear):
-	total = totalgain(taxyear)
-	totaltaxowed = (total-annualallowance(taxyear))*taxpercentage/100
-	if totaltaxowed > 0:
-		print("Total tax owed at",taxpercentage,"% tax rate: £",round((total-annualallowance(taxyear))*taxpercentage/100, 2))
+	if totaltax > 0:
+		print("Total tax owed at ",taxpercentage,"% tax rate: £ ",totaltax)
 	else:
-		print("Total tax owed at",taxpercentage,"% tax rate: £",0)
-	return total
+		print("Total tax owed at ",taxpercentage,"% tax rate: £ ",0)
+
 	
+printinfo(taxyear)
 
 
 
 
-
-total = totaltax(taxyear)
 
 ################# These have to be done after calculation runs
 
 taxgains.addgainvalues() 
 detailed_tax_list.append_sortedgainlist()
+taxgains.append_sortedgainlist()
 
 
 ##########################
 
-def check(taxyear,total):
+def check(taxyear):
 	x=0
 	for z in range(0,len(taxgains.gain_list)):
 		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
 			x+=taxgains.gain_list[z].gain_loss
-	if x==total :
+	x-=sumfees(taxyear)
+	if round(x, 2) ==round(totalgain, 2) :
 		print("Well done!")
 	else:
-		print("Gain Loss total adds up to ", x, " While the calcuated gain is: ", total)
+		print("Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
 
 
-#check(taxyear,total)
+check(taxyear)
 
 ######### Facts needed for self-assesment
 def taxyeardisposalscount(taxyear):
@@ -630,11 +644,12 @@ def disposalproceeds(taxyear):
 		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
 			x+=taxgains.gain_list[z].proceeds
 	return round(x, 2)
-def costs(taxyear): # Note this should include exhange fees!
+def costs(taxyear): # Note this should include exchange fees!
 	x=0
 	for z in range(0,len(taxgains.gain_list)):
 		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
 			x+=taxgains.gain_list[z].cost_basis
+	x+=sumfees(taxyear)
 	return round(x, 2)
 
 number_of_disposals = taxyeardisposalscount(taxyear)
@@ -655,6 +670,23 @@ class htmloutput():
 		f.close()
 
 	def html_table(self,history):
+		yield '<h2>List of sales with calculations </h2>'
+		yield '<h3>Values for Proceeds, Cost basis, fee and gain/loss are given in GBP </h3>'
+		yield '<h3>Calcuated from file:' + tradelist_filename + '</h3>'
+		for x in range(0,len(data)): ### Print warning to contact HMRC
+			if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
+				yield "<h3>Sale:" + str(x)+" has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom</h3>"
+		
+		yield "<h3>Gain from days: £ " + str(days)+". Gain from bed and breakfasting: £ " + str(bnb)+". Gain from 404 Holdings: £ " + str(avg) + " Total value of fees paid in GBP: £ " + str(feetotal)+" Total Capital Gains for " + str(taxyear-1)+"/" + str(taxyear)+": £ " + str(round(days+bnb+avg-feetotal, 2)) + "</h3>"
+		if taxablegain > 0:
+			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: £ " + str(taxablegain)  + "</h3>"
+		else:
+			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: £ " + str(0)  + "</h3>"
+
+		if totaltax > 0:
+			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: £ " + str(totaltax) + "</h3>"
+		else:
+			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: £ " + str(0) + "</h3>"
 		yield '<table>'
 		yield '  <tr><td>'		
 		
@@ -664,7 +696,7 @@ class htmloutput():
 			
 			yield '  <tr><td>'
 
-			yield gain.print_gain_html() #'    </td><td>'+ str(getattr(sublist, 'match_type')) + '    </td><td>'+ str(getattr(sublist, 'proceeds')) + '    </td><td>'+ str(getattr(sublist, 'cost_basis')) + '    </td><td>'+ str(getattr(sublist, 'fee')) + '    </td><td>'+ str(getattr(sublist, 'gain_loss')) + '    </td><td>'+ str(getattr(sublist, 'date_sold')) + '    </td><td>'+ str(getattr(sublist, 'currency')) + '    </td><td>'+ str(getattr(sublist, 'amount')) + '    </td><td>'+ str(getattr(sublist, 'sold_location')) + '    </td><td>'+ str(getattr(sublist, 'sell_number')) + '    </td><td>'+ str(getattr(sublist, 'date_acquired')) + '    </td><td>'+ str(getattr(sublist, 'bought_location')) + '    </td><td>'+ str(getattr(sublist, 'buy_number'))
+			yield gain.print_gain_html() 
 		yield '</table>'
 
 
