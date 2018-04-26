@@ -30,7 +30,7 @@ def annualallowance(taxyear):
 	if taxyear==2019:
 		 return 11700
 
-taxpercentage = float(input('Enter the percentage of tax you pay on captial gains: '))
+taxpercentage = float(input('Enter the percentage of tax you pay on capital gains: '))
 
 taxyear = int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
 
@@ -135,7 +135,7 @@ class Trade:
 		return amount_in/amount_out
 
 	def __str__(self):
-		return "Trade: " + self.buy + self.currency_buy + " -> " + self.sell + self.currency_sell + " | GBP:" + self.sell_value_gbp + ", " + self.date
+		return "Trade: " + str(self.buy) + str(self.currency_buy) + " -> " + str(self.sell) + str(self.currency_sell) + " | GBP:" + str(self.sell_value_gbp) + ", " + str(self.date)
 
 
 class TradingHistory:
@@ -237,17 +237,13 @@ costbasisGBPpercoin = []
 
 for tradenumber in range(0,len(data)):
 		if trading.trades[tradenumber].buy == 0:
-			pass
+			costbasisGBPpercoin.append(0)
 		else:
 			costbasisGBPpercoin.append(trading.trades[tradenumber].sell_value_gbp/trading.trades[tradenumber].buy)
 		if trading.trades[tradenumber].sell==0:
 			valueofsalepercoin.append(0)
 		else:
 			valueofsalepercoin.append(trading.trades[tradenumber].buy_value_gbp/trading.trades[tradenumber].sell)
-
-
-
-
 
 
 
@@ -461,6 +457,7 @@ class DetailedHistory:
 
 
 detailed_tax_list = DetailedHistory()
+
 
 
 ### Calculate gains on day trades using fifo
