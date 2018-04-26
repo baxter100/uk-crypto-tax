@@ -15,7 +15,7 @@ Tool written in Python for calculating Capital Gains Tax on cryptocurrency trade
 
 The easiest way to get started is by uploading your trades to https://cointracking.info/ and then downloading the trade list from https://cointracking.info/trade_prices.php
 
-For general cryppto-related tax questions see: https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments/ or https://cryptotax.uk/
+For general crypto-related tax questions see: https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments/ or https://cryptotax.uk/
 
 **We have two seperate versions to help noticing errors. If you find any discrepancies in the versions please let us know**
 
@@ -64,7 +64,7 @@ For guidance installing python3 on your machine see https://wiki.python.org/moin
 Currently we have two separately created versions. This is helping us identify problems and mistakes. The two versions are more or less the same, though currently version two considers gifting/hard forks as a taxable event. Further, version two is likely the structure we will use in the end as it will be easier to incorporate a tax report.
 
 ##### Version 1
-To run the code first make sure your csv file is in the same folder as the python file and change the name of your csv file to "trade-list.csv" (Or, alternatively in `filename="trade-list.csv"` change trade-list.csv to point to the file you downloaded from cointracking.info). Then run the python file. You will be asked to input your rate of tax and the tax year you want to calculate gains for.
+To run the code first make sure your csv file is in the same folder as the python file and change the name of your csv file to "trade-list.csv" (Or, alternatively on line 16 change trade-list.csv to point to the file you downloaded from cointracking.info). Then run the python file. You will be asked to input your rate of tax and the tax year you want to calculate gains for.
 
 If you would like to include fees in the calculation, you can do this by downloading the 'Trading Fees' list as a csv from cointracking and editing a bit of the code. What you need to do is download the feelist to the same folder as the python script and save it as fee-calculation.csv. Then in the python file uncomment the line `trading.append_fees(feelist)`.
 
