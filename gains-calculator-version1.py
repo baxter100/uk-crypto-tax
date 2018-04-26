@@ -675,18 +675,18 @@ class htmloutput():
 		yield '<h3>Calcuated from file:' + tradelist_filename + '</h3>'
 		for x in range(0,len(data)): ### Print warning to contact HMRC
 			if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
-				yield "<h3>Sale:" + str(x)+" has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom</h3>"
+				yield "<h3>Sale:" + str(x)+" has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (&pound45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom</h3>"
 		
-		yield "<h3>Gain from days: £ " + str(days)+". Gain from bed and breakfasting: £ " + str(bnb)+". Gain from 404 Holdings: £ " + str(avg) + " Total value of fees paid in GBP: £ " + str(feetotal)+" Total Capital Gains for " + str(taxyear-1)+"/" + str(taxyear)+": £ " + str(round(days+bnb+avg-feetotal, 2)) + "</h3>"
+		yield "<h3>Gain from days: &pound " + str(days)+". Gain from bed and breakfasting: &pound " + str(bnb)+". Gain from 404 Holdings: &pound " + str(avg) + " Total value of fees paid in GBP: &pound " + str(feetotal)+" Total Capital Gains for " + str(taxyear-1)+"/" + str(taxyear)+": &pound " + str(round(days+bnb+avg-feetotal, 2)) + "</h3>"
 		if taxablegain > 0:
-			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: £ " + str(taxablegain)  + "</h3>"
+			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: &pound " + str(taxablegain)  + "</h3>"
 		else:
-			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: £ " + str(0)  + "</h3>"
+			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: &pound " + str(0)  + "</h3>"
 
 		if totaltax > 0:
-			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: £ " + str(totaltax) + "</h3>"
+			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: &pound " + str(totaltax) + "</h3>"
 		else:
-			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: £ " + str(0) + "</h3>"
+			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: &pound " + str(0) + "</h3>"
 		yield '<table>'
 		yield '  <tr><td>'		
 		
