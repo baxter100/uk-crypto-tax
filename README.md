@@ -43,6 +43,8 @@ There are various ambiguities around specifics of how gain should be calculated 
 
 4. We unsure whether gifts of coins/coins gained from hard forks are taxable events with costbasis 0 or not. At the moment, **version 1 does not consider this taxable** while **version 2 does**. **WARNING: This can make big differences to overall calculated gain**
 
+5. Version 1 treats any outgoings such as gifts you give to people and tips as taxable --- calculating the gain by working out the cost basis and subtracting that from the value of the crypto you gave away. See https://www.gov.uk/capital-gains-tax/gifts for more information on gifts
+
 ### Getting Started
 There are basically four steps to getting this running:
 1. Creating an appropriate trade list
