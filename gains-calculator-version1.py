@@ -12,6 +12,7 @@ import copy
 import operator
 
 
+
 ####### csv filename
 tradelist_filename = "trade-list.csv"
 
@@ -266,12 +267,12 @@ class Gain:
 	fee = 0
 
 	def __str__(self):
-		return "Amount: " + str(self.amount) +  " Currency: " + str(self.currency) + " Date Acquired: "+ str(self.date_acquired) +" Date Sold: "+ str(self.date_sold)  +  " Location of buy: "+ str(self.bought_location) +  " Location of sell: "+ str(self.sold_location) +  " Proceeds in GBP: " + str(self.proceeds) +  " Cost Basis in GBP: "+ str(self.cost_basis)+ " Fee in GBP: "+ str(self.fee) +  " Gain/Loss in GBP: "+ str(self.gain_loss)
+		return "Amount: " + str(self.amount) +  " Currency: " + str(self.currency) + " Date Acquired: "+ str(self.date_acquired.strftime("%d.%m.%Y %H:%M")) +" Date Sold: "+ str(self.date_sold.strftime("%d.%m.%Y %H:%M"))  +  " Location of buy: "+ str(self.bought_location) +  " Location of sell: "+ str(self.sold_location) +  " Proceeds in GBP: " + str(self.proceeds) +  " Cost Basis in GBP: "+ str(self.cost_basis)+ " Fee in GBP: "+ str(self.fee) +  " Gain/Loss in GBP: "+ str(self.gain_loss)
 
 	def __repr__(self):
 		return str(self)
 	def print_gain_html(self):
-		return '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number)
+		return '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold.strftime("%d.%m.%Y %H:%M")) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number)
 
 class GainHistory:
 	gain_list=[]
@@ -285,7 +286,7 @@ class GainHistory:
 				ga.amount = trading.tradelist[x].sell #### Use the unmodified copy here to avoid future complication
 				ga.currency = trading.tradelist[x].currency_sell
 				ga.date_acquired = "?"
-				ga.date_sold = trading.tradelist[x].date 
+				ga.date_sold = trading.tradelist[x].date
 				ga.bought_location = "?"
 				ga.sold_location = trading.tradelist[x].exchange
 				if trading.trades[x].buy_value_gbp == 0: #It is necessary to use sell value when calculating gains on gifts
@@ -302,15 +303,6 @@ class GainHistory:
 	def __repr__(self):
 		return str(self)
 
-	# def sortedgainlist(self):
-	# 	simplegainlist =[]
-	# 	for z in self.gain_list:
-	# 		if taxyearstart(taxyear)<=z.date_sold<= taxyearend(taxyear):
-	# 			for attr, value in z.__dict__.items():
-	# 				if type(value) is float and attr != "amount":
-	# 					setattr(z, attr, round(value, 2))
-	# 			simplegainlist.append(z)
-	# 	return sorted(simplegainlist, key=lambda gain_list: gain_list.date_sold)
 
 	def updatetaxcostbasis(self,x,y):
 
@@ -341,7 +333,6 @@ class GainHistory:
 					if type(value) is float and attr != "amount":
 						setattr(z, attr, round(value, 2))
 
-						
 				self.sortedgainlist.append(z)
 
 		self.sortedgainlist  = sorted(self.sortedgainlist, key=lambda gain_list: gain_list.date_sold)
@@ -381,7 +372,10 @@ class DetailedCalculation():
 	match_type = 0
 
 	def print_gain_html(self):
-		return '    </td><td>'+ str(self.match_type) + '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number) + '    </td><td>'+ str(self.date_acquired) + '    </td><td>'+ str(self.bought_location) + '    </td><td>'+ str(self.buy_number)
+		if type(self.date_acquired)==str:
+			return '    </td><td>'+ str(self.match_type) + '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold.strftime("%d.%m.%Y %H:%M")) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number) + '    </td><td>'+ str(self.date_acquired) + '    </td><td>'+ str(self.bought_location) + '    </td><td>'+ str(self.buy_number)
+		else:
+			return '    </td><td>'+ str(self.match_type) + '    </td><td>'+ str(self.proceeds) + '    </td><td>'+ str(self.cost_basis) + '    </td><td>'+ str(self.fee) + '    </td><td>'+ str(self.gain_loss) + '    </td><td>'+ str(self.date_sold.strftime("%d.%m.%Y %H:%M")) + '    </td><td>'+ str(self.currency) + '    </td><td>'+ str(self.amount) + '    </td><td>'+ str(self.sold_location) + '    </td><td>'+ str(self.sell_number) + '    </td><td>'+ str(self.date_acquired.strftime("%d.%m.%Y %H:%M")) + '    </td><td>'+ str(self.bought_location) + '    </td><td>'+ str(self.buy_number)
 
 
 
@@ -627,7 +621,7 @@ def check(taxyear):
 		print("Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
 
 
-check(taxyear)
+#check(taxyear)
 
 ######### Facts needed for self-assesment
 def taxyeardisposalscount(taxyear):
