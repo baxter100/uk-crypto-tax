@@ -55,15 +55,15 @@ fiat_list = ["GBP", "EUR"]
 def gainpair(x,y): #Given a pair of trades, returns the capital gain
 	if trading.trades[y].buy>=trading.trades[x].sell:
 		if trading.trades[x].buy_value_gbp==0: #necessary because of gifts/tips
-			return trading.trades[x].sell_value_gbp - costbasisGBPpercoin[y]*trading.trades[x].sell
+			return trading.trades[x].sell_value_gbp - trading.costbasisGBPpercoin[y]*trading.trades[x].sell
 		else:
-			return trading.trades[x].buy_value_gbp - costbasisGBPpercoin[y]*trading.trades[x].sell
+			return trading.trades[x].buy_value_gbp - trading.costbasisGBPpercoin[y]*trading.trades[x].sell
 		
 	else:
 		if trading.trades[x].buy_value_gbp==0: #necessary because of gifts/tips
-			return trading.trades[x].sell_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
+			return trading.trades[x].sell_value_gbp*trading.trades[y].buy/trading.trades[x].sell - trading.costbasisGBPpercoin[y]*trading.trades[y].buy
 		else:
-			return trading.trades[x].buy_value_gbp*trading.trades[y].buy/trading.trades[x].sell - costbasisGBPpercoin[y]*trading.trades[y].buy
+			return trading.trades[x].buy_value_gbp*trading.trades[y].buy/trading.trades[x].sell - trading.costbasisGBPpercoin[y]*trading.trades[y].buy
 
 def addgainsfifo(x,y): #adds gains from pair to total if tax year is correct
 	if taxdatecheck(x):
@@ -78,11 +78,11 @@ def fifoupdatetradelist(x,y): #updates trade amounts
 
 		trading.trades[y].buy=trading.trades[y].buy-trading.trades[x].sell
 		trading.trades[x].sell=0
-		trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy) 
+		trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (trading.valueofsalepercoin[x]*trading.trades[y].buy) 
 	else:
 
 		trading.trades[x].sell=trading.trades[x].sell-trading.trades[y].buy
-		trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (valueofsalepercoin[x]*trading.trades[y].buy)
+		trading.trades[x].buy_value_gbp = trading.trades[x].buy_value_gbp - (trading.valueofsalepercoin[x]*trading.trades[y].buy)
 		trading.trades[y].buy=0
 
 ### Matching conditions
@@ -142,14 +142,25 @@ class TradingHistory:
 	tradelist = [] #unmodified list of trades
 	trades = [] #copy that gets modified as calculation runs
 	crypto_list = [] #list of cryptos involved in trade
+	valueofsalepercoin = [] # gives a list of the value accrued per coin sold for each trade
+	costbasisGBPpercoin = [] # gives a list of the cost per coin gained for each trade
 
-	def populate_crypto_list(self):
+	def populate_crypto_value_lists(self): ### Populate list of values and cost basis prior to editing data
 		for tradenumber in range(0,len(self.tradelist)):
 			
 			if self.tradelist[tradenumber].currency_buy not in self.crypto_list and self.tradelist[tradenumber].currency_buy !="GBP" and self.tradelist[tradenumber].currency_buy!="EUR" :
 				self.crypto_list.append(self.tradelist[tradenumber].currency_buy)
 			if self.tradelist[tradenumber].currency_sell not in self.crypto_list and self.tradelist[tradenumber].currency_sell !="GBP" and self.tradelist[tradenumber].currency_sell!="EUR" :
 				self.crypto_list.append(self.tradelist[tradenumber].currency_sell)
+			
+			if self.tradelist[tradenumber].buy == 0:
+				self.costbasisGBPpercoin.append(0)
+			else:
+				self.costbasisGBPpercoin.append(self.tradelist[tradenumber].sell_value_gbp/self.tradelist[tradenumber].buy)
+			if self.tradelist[tradenumber].sell==0:
+				self.valueofsalepercoin.append(0)
+			else:
+				self.valueofsalepercoin.append(self.tradelist[tradenumber].buy_value_gbp/self.tradelist[tradenumber].sell)			
 
 	def load_trades_from_csv(self,filename=tradelist_filename):
 		try:
@@ -222,7 +233,7 @@ trading = TradingHistory()
 data = trading.load_trades_from_csv()
 
 trading.append_cointracking_trade_list(data)
-trading.populate_crypto_list()
+trading.populate_crypto_value_lists()
 
 ######### Uncomment below if you've added a feelist from cointracking and saved it in the same folder, as "fee-calculation.csv"
 #feelist = trading.load_fees_from_csv()
@@ -231,19 +242,6 @@ trading.populate_crypto_list()
 #trading.append_fees(feelist)
 ############
 
-### Populate list of values and cost basis prior to editing list, this shouldn't be necessary once deep copying is used
-valueofsalepercoin = []
-costbasisGBPpercoin = []
-
-for tradenumber in range(0,len(data)):
-		if trading.trades[tradenumber].buy == 0:
-			costbasisGBPpercoin.append(0)
-		else:
-			costbasisGBPpercoin.append(trading.trades[tradenumber].sell_value_gbp/trading.trades[tradenumber].buy)
-		if trading.trades[tradenumber].sell==0:
-			valueofsalepercoin.append(0)
-		else:
-			valueofsalepercoin.append(trading.trades[tradenumber].buy_value_gbp/trading.trades[tradenumber].sell)
 
 
 
@@ -303,9 +301,9 @@ class GainHistory:
 	def updatetaxcostbasis(self,x,y):
 
 		if trading.trades[y].buy>=trading.trades[x].sell:
-			self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += costbasisGBPpercoin[y]*trading.trades[x].sell
+			self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += trading.costbasisGBPpercoin[y]*trading.trades[x].sell
 		else:
-			self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += costbasisGBPpercoin[y]*trading.trades[y].buy
+			self.gain_list[self.mapfromtradetogainlistnumber(x)].cost_basis += trading.costbasisGBPpercoin[y]*trading.trades[y].buy
 
 	def addgainvalues(self):
 		for z in range(0,len(self.gain_list)):
@@ -393,9 +391,9 @@ class DetailedHistory:
 		d.sold_location = trading.tradelist[x].exchange
 		d.proceeds = trading.tradelist[x].buy_value_gbp*d.amount/trading.tradelist[x].sell #Proceeds are always calculated here using buy value!
 		if trading.trades[y].buy>=trading.trades[x].sell:
-			d.cost_basis = costbasisGBPpercoin[y]*trading.trades[x].sell
+			d.cost_basis = trading.costbasisGBPpercoin[y]*trading.trades[x].sell
 		else:
-			d.cost_basis = costbasisGBPpercoin[y]*trading.trades[y].buy
+			d.cost_basis = trading.costbasisGBPpercoin[y]*trading.trades[y].buy
 		d.gain_loss = d.proceeds-d.cost_basis
 		d.buy_number = y
 		d.sell_number = x
@@ -512,7 +510,7 @@ def averagecostbasisuptotrade(x,countervalue,counteramount):
 	for y in range(0,x):
 		if currencymatch(x,y):
 		
-			t += costbasisGBPpercoin[y]*trading.trades[y].buy
+			t += trading.costbasisGBPpercoin[y]*trading.trades[y].buy
 			q += trading.trades[y].buy
 	if q - counteramount == 0:
 		return 0
@@ -678,9 +676,10 @@ class htmloutput():
 			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: &pound " + str(totaltax) + "</h3>"
 		else:
 			yield "<h3>Total tax owed at " + str(taxpercentage)+"% tax rate: &pound " + str(0) + "</h3>"
+		yield '<p>Note: Where trades are split over multiple entries in the detailed calculations, the fees given are duplicated</p>'
+		
 		yield '<table>'
 		yield '  <tr><td>'		
-		
 		yield history.print_tableheading_html() 
 
 		for gain in history.sortedgainlist[::-1]:
