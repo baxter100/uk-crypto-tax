@@ -373,7 +373,6 @@ class DetailedCalculation():
 
 
 
-
 class DetailedHistory:
 	gain_list=[]
 	sortedgainlist = []
@@ -389,7 +388,10 @@ class DetailedHistory:
 		d.date_sold = trading.tradelist[x].date 
 		d.bought_location = trading.tradelist[y].exchange
 		d.sold_location = trading.tradelist[x].exchange
-		d.proceeds = trading.tradelist[x].buy_value_gbp*d.amount/trading.tradelist[x].sell #Proceeds are always calculated here using buy value!
+		if trading.trades[x].buy_value_gbp == 0:
+			d.proceeds = trading.tradelist[x].sell_value_gbp*d.amount/trading.tradelist[x].sell #Proceeds are always calculated here using buy value unless the buy value is 0 i.e. for a gift
+		else:
+			d.proceeds = trading.tradelist[x].buy_value_gbp*d.amount/trading.tradelist[x].sell #Proceeds are always calculated here using buy value!
 		if trading.trades[y].buy>=trading.trades[x].sell:
 			d.cost_basis = trading.costbasisGBPpercoin[y]*trading.trades[x].sell
 		else:
@@ -614,6 +616,16 @@ def check(taxyear):
 		print("Well done!")
 	else:
 		print("Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
+
+	x=0
+	for z in range(0,len(detailed_tax_list.gain_list)):
+		if taxyearstart(taxyear)<=detailed_tax_list.gain_list[z].date_sold<= taxyearend(taxyear):
+			x+=detailed_tax_list.gain_list[z].gain_loss
+	x-=sumfees(taxyear)
+	if round(x, 2) ==round(totalgain, 2) :
+		print("Well done!")
+	else:
+		print("Detailed Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
 
 
 #check(taxyear)
