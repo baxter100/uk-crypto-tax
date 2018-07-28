@@ -110,6 +110,8 @@ On line 327, `trading.append_cointrackingcsv_trade_list("trade-list.csv")`. chan
 * Have you checked both version 1 and 2? Gifts are added to your gains in v2 so this may be giving you a larger figure than expected
 * How did you obtain your csv file? The formatting is very specific. In particular, the first line automatically gets deleted to remove column headers, so this must not contain any important information. Also, the columns need to remain exactly as they are from cointracking. See sample trade list.
 * Which fiat currencies have you been trading in? The program currently only considers GBP as fiat, so if you have trades in other fiat currencies you're likely to get strange results.
+* Ideally trades should have the same buy and sell value and in most cases the discrepancy is negligible. However, if there is a large difference i.e. the spread is large, as can sometimes be the case, then the choice of which value to use when calculating gains or losses can make a significant difference.
+* Sometimes fees are baked into trades so can be counted twice (see last comment here: https://github.com/baxter100/uk-crypto-tax/issues/1)
 
 #### Errors? 
 
