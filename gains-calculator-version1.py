@@ -1,6 +1,7 @@
 
 #This code is licensed under the GNU General Public License v3.0. Please leave this notice in the code if you choose to redistibute this file redistribute this file.
 
+import os
 
 import csv
 from datetime import datetime, date, time, timedelta
@@ -235,11 +236,14 @@ data = trading.load_trades_from_csv()
 trading.append_cointracking_trade_list(data)
 trading.populate_crypto_value_lists()
 
-######### Uncomment below if you've added a feelist from cointracking and saved it in the same folder, as "fee-calculation.csv"
-#feelist = trading.load_fees_from_csv()
+######### Add fees
 
 
-#trading.append_fees(feelist)
+if 'fee-calculation.csv' in os.listdir(os.getcwd()):
+	feelist = trading.load_fees_from_csv()
+
+
+	trading.append_fees(feelist)
 ############
 
 
@@ -402,8 +406,10 @@ class DetailedHistory:
 		d.fee = trading.tradelist[x].fee_value_gbp
 		if viabledaymatch(x,y):
 			d.match_type="day"
-		else:
+		elif viablebnbmatch(x,y):
 			d.match_type="bnb"
+		else:
+			d.match_type="?"
 		
 
 		self.gain_list.append(d)
@@ -577,7 +583,7 @@ totaltax = taxablegain*taxpercentage/100
 def printinfo(taxyear):
 	for x in range(0,len(data)): ### Print warning to contact HMRC
 		if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
-			print("Sale:",x," has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom")
+			print("Sale:",x," has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (£46,800 for 2018/19) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom")
 	
 	print("Gain from days: £ ",days,". Gain from bed and breakfasting: £ ",bnb,". Gain from 404 Holdings: £ ",avg, "Total value of fees paid in GBP: £ ",feetotal,"Total Capital Gains for ",taxyear-1,"/",taxyear,": £ ",round(days+bnb+avg-feetotal, 2))
 	if taxablegain > 0:
@@ -604,31 +610,7 @@ detailed_tax_list.append_sortedgainlist()
 taxgains.append_sortedgainlist()
 
 
-##########################
 
-def check(taxyear):
-	x=0
-	for z in range(0,len(taxgains.gain_list)):
-		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
-			x+=taxgains.gain_list[z].gain_loss
-	x-=sumfees(taxyear)
-	if round(x, 2) ==round(totalgain, 2) :
-		print("Well done!")
-	else:
-		print("Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
-
-	x=0
-	for z in range(0,len(detailed_tax_list.gain_list)):
-		if taxyearstart(taxyear)<=detailed_tax_list.gain_list[z].date_sold<= taxyearend(taxyear):
-			x+=detailed_tax_list.gain_list[z].gain_loss
-	x-=sumfees(taxyear)
-	if round(x, 2) ==round(totalgain, 2) :
-		print("Well done!")
-	else:
-		print("Detailed Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
-
-
-#check(taxyear)
 
 ######### Facts needed for self-assesment
 def taxyeardisposalscount(taxyear):
@@ -677,7 +659,7 @@ class htmloutput():
 		for x in range(0,len(data)): ### Print warning to contact HMRC
 			if trading.trades[x].sell_value_gbp >= 4*annualallowance(taxyear) and taxyearstart(taxyear)<=trading.trades[x].date<= taxyearend(taxyear):
 				yield "<h3>Sale:" + str(x)+" has a sale value of more than four times the annual allowance. If you sell more than four times the annual allowance (&pound45,200 for 2017/18) of crypto-assets, even if you make a profit of less than the allowance, you have to report this sale to HMRC. You can do this either by registering and reporting through Self Assessment, or by writing to them at: PAYE and Self Assessment, HM Revenue and Customs, BX9 1AS, United Kingdom</h3>"
-		
+		yield "<h3> Number of Disposals: "+ str(number_of_disposals) + ". Disposal Proceeds: " + str(disposalproceeds(taxyear)) + ". Allowable Costs: " + str(costs(taxyear)) + "</h3>"
 		yield "<h3>Gain from days: &pound " + str(days)+". Gain from bed and breakfasting: &pound " + str(bnb)+". Gain from 404 Holdings: &pound " + str(avg) + " Total value of fees paid in GBP: &pound " + str(feetotal)+" Total Capital Gains for " + str(taxyear-1)+"/" + str(taxyear)+": &pound " + str(round(days+bnb+avg-feetotal, 2)) + "</h3>"
 		if taxablegain > 0:
 			yield "<h3>Total Taxable Gain for " + str(taxyear-1)+"/" + str(taxyear)+" for 'normal' people: &pound " + str(taxablegain)  + "</h3>"
@@ -718,4 +700,46 @@ htmlout.simpletaxreport()
 
 htmlout.detailedtaxreport()
 
+########################## Checks
 
+def check(taxyear):
+	x=0
+	for z in range(0,len(taxgains.gain_list)):
+		if taxyearstart(taxyear)<=taxgains.gain_list[z].date_sold<= taxyearend(taxyear):
+			x+=taxgains.gain_list[z].gain_loss
+	x-=sumfees(taxyear)
+	if round(x, 2) ==round(totalgain, 2) :
+		print("Well done!")
+	else:
+		print("Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
+
+	x=0
+	for z in range(0,len(detailed_tax_list.gain_list)):
+		if taxyearstart(taxyear)<=detailed_tax_list.gain_list[z].date_sold<= taxyearend(taxyear):
+			x+=detailed_tax_list.gain_list[z].gain_loss
+	x-=sumfees(taxyear)
+	if round(x, 2) ==round(totalgain, 2) :
+		print("Well done!")
+	else:
+		print("Detailed Gain Loss total adds up to ", x, " While the calcuated gain is: ", totalgain)
+
+
+check(taxyear)
+
+
+def checkdetailed(taxyear):
+	daycheck=0
+	bnbcheck=0
+	avgcheck=0
+	for z in range(0,len(detailed_tax_list.gain_list)):
+		if taxyearstart(taxyear)<=detailed_tax_list.gain_list[z].date_sold<= taxyearend(taxyear):
+			if detailed_tax_list.gain_list[z].match_type == "day":
+				daycheck += detailed_tax_list.gain_list[z].gain_loss
+			if detailed_tax_list.gain_list[z].match_type == "bnb":
+				bnbcheck += detailed_tax_list.gain_list[z].gain_loss
+			if detailed_tax_list.gain_list[z].match_type == "avg":
+				avgcheck += detailed_tax_list.gain_list[z].gain_loss	
+	print("daycheck = ", daycheck, "bnbcheck = ", bnbcheck, "avgcheck = ", avgcheck)
+
+
+checkdetailed(taxyear)
