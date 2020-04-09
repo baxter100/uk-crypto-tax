@@ -56,6 +56,8 @@ There are basically four steps to getting this running:
 
 Currently **the program requires a csv file formatted in a specific way including all trades with GBP values --- see sample-trade-list.csv**. We used https://cointracking.info/ to obtain the necessary csv file and this is what we recommend at the moment. Go to https://cointracking.info/trade_prices.php and download the csv file from there (if you have an account!). **Make sure you rename the file to trade-list.csv**. If you are stitching multiple lists together, make sure the trades are still in chronological order.
 
+The format changes from time to time so check that the columns are still the same, for example currently you need to add an extra column at the beginning of the csv from cointracking in order to get the correct format.
+
 #### Installing python3
 Installing Python is generally easy, and nowadays many Linux and UNIX distributions include a recent Python. Even some Windows computers (notably those from HP) now come with Python already installed.
 

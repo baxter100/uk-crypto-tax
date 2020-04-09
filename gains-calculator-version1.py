@@ -30,8 +30,10 @@ def annualallowance(taxyear):
 		 return 11300
 	if taxyear==2019:
 		 return 11700
+	if taxyear==2020:
+		 return 12300
 
-taxpercentage = float(input('Enter the percentage of tax you pay on capital gains: '))
+taxpercentage = float(input('Enter the percentage of tax you pay on capital gains (https://www.gov.uk/capital-gains-tax/rates): '))
 
 taxyear = int(input('Enter the year you want to calculate tax for (e.g. 2018 for 2017/2018): '))
 
