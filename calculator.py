@@ -382,9 +382,13 @@ def output_to_html(results, html_filename):
     # Create html file
 
 
-if __name__ == "__main__":
+def main():
     trades = read_csv_into_trade_list("examples/sample-trade-list.csv")
     fees = read_csv_into_fee_list("examples/sample-fee-list.csv")
     assign_fees_to_trades(trades, fees)
     capital_gains = calculate_capital_gain(trades, TAX_YEAR)
     output_to_html(capital_gains, "tax-report.html")
+
+
+if __name__ == "__main__":
+    main()
