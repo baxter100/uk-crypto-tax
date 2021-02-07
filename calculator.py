@@ -172,7 +172,7 @@ class Gain:
         # cost of acquiring disposed currency
         self.cost_basis = cost_basis
         # gain doesn't account for fees
-        self.gain_loss = self.proceeds - self.cost_basis
+        self.native_currency_gain_value = self.proceeds - self.cost_basis
 
         if hasattr(disposal, "fee_value_gbp"):
             # TODO change to associated fee, which represents portion of sale
@@ -186,7 +186,7 @@ class Gain:
             self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
             self.bought_location) + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
             self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
-            self.fee) + " Gain/Loss in GBP: " + str(self.gain_loss)
+            self.fee) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
 
     def __repr__(self):
         return str(self)
@@ -303,7 +303,6 @@ def calculate_bnb_gains_fifo(trade_list, tax_year):
 
 def calculate_fifo_gains(trade_list, tax_year, trade_match_condition):
     gains = []
-    fifo_total = 0
     for disposal in [trade for trade in trade_list if trade.is_viable_sell]:
         for corresponding_buy in trade_list:
             # Trades get updated as this iteration happens, to reduce buy_amount of corresponding buy and sell amount of disposal
@@ -337,7 +336,7 @@ def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accoun
 
 def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
     # 404 holdings is calculated for each non-fiat asset.
-    total_gain_loss = 0
+    gains = []
     accounted_for_cost_basis = 0
     accounted_for_disposal_amount = 0
     for disposal in trade_list:
@@ -347,12 +346,13 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
                                                    trade_list)
             accounted_for_cost_basis += costbasis
             accounted_for_disposal_amount += disposal.sell_amount
-            update_trade_list_after_avg_pair()
-            if within_tax_year(disposal, taxyear):
-                total_gain_loss += disposal.buy_value_gbp - costbasis
-            append_gain_info_to_output()
+            gain = None  # TODO: Create Gain object
+            # gain.native_currency_gain_value = disposal.buy_value_gbp - costbasis
+            gains.append(gain)
 
-    return total_gain_loss
+            update_trade_list_after_avg_pair()
+
+    return gains
 
 
 def calculate_average_gains(taxyear, trade_list):
