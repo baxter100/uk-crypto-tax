@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
         trade_one = trade_list[1]
         self.assertEqual(trade_one.buy_amount, 0.6)
         self.assertEqual(trade_one.buy_currency, "ETH")
-        self.assertEqual(trade_one.costbasisGBPpercoin, 417 / 0.6)
+        self.assertEqual(trade_one.native_cost_per_coin, 417 / 0.6)
 
         # trade list should be in chrono order
         for x in range(0,len(trade_list)):

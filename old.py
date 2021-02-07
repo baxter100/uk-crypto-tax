@@ -58,17 +58,17 @@ def gainpair(first_trade, second_trade):
     # Given a pair of trades, returns the capital gain
     if second_trade.buy >= first_trade.sell:
         if first_trade.buy_value_gbp == 0:  # necessary because of gifts/tips
-            return first_trade.sell_value_gbp - second_trade.costbasisGBPpercoin * first_trade.sell
+            return first_trade.sell_value_gbp - second_trade.native_cost_per_coin * first_trade.sell
         else:
-            return first_trade.buy_value_gbp - second_trade.costbasisGBPpercoin * first_trade.sell
+            return first_trade.buy_value_gbp - second_trade.native_cost_per_coin * first_trade.sell
 
     else:
         if first_trade.buy_value_gbp == 0:  # necessary because of gifts/tips
             return first_trade.sell_value_gbp * second_trade.buy / first_trade.sell - \
-                   second_trade.costbasisGBPpercoin * second_trade.buy
+                   second_trade.native_cost_per_coin * second_trade.buy
         else:
             return first_trade.buy_value_gbp * second_trade.buy / first_trade.sell - \
-                   second_trade.costbasisGBPpercoin * second_trade.buy
+                   second_trade.native_cost_per_coin * second_trade.buy
 
 
 def addgainsfifo(x, y, taxyear):  # adds gains from pair to total if tax year is correct
@@ -304,9 +304,9 @@ class GainHistory:
         gain1 = self.mapfromtradetogain(trade1)
 
         if trade2.buy >= trade1.sell:
-            gain1.cost_basis += trade2.costbasisGBPpercoin * trade1.sell
+            gain1.cost_basis += trade2.native_cost_per_coin * trade1.sell
         else:
-            gain1.cost_basis += trade2.costbasisGBPpercoin * trade2.buy
+            gain1.cost_basis += trade2.native_cost_per_coin * trade2.buy
 
     def addgainvalues(self):
         for gain in self.gain_list:
@@ -406,9 +406,9 @@ class DetailedHistory:
         else:
             d.proceeds = x.buy_value_gbp * d.amount / x.sell  # Proceeds are always calculated here using buy value!
         if y.buy >= x.sell:
-            d.cost_basis = y.costbasisGBPpercoin * x.sell
+            d.cost_basis = y.native_cost_per_coin * x.sell
         else:
-            d.cost_basis = y.costbasisGBPpercoin * y.buy
+            d.cost_basis = y.native_cost_per_coin * y.buy
         d.gain_loss = d.proceeds - d.cost_basis
         d.buy_number = y
         d.sell_number = x
@@ -515,7 +515,7 @@ def averagecostbasisuptotrade(trade, countervalue, counteramount,trade_history):
         if earlier_trade.trade_number < trade.trade_number:
 
             if currencymatch(trade, earlier_trade):
-                t += earlier_trade.costbasisGBPpercoin * earlier_trade.buy
+                t += earlier_trade.native_cost_per_coin * earlier_trade.buy
                 q += earlier_trade.buy
     if q - counteramount == 0:
         return 0

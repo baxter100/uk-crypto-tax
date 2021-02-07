@@ -110,9 +110,11 @@ class Trade:
 
         #
         if self.buy_amount == 0:
-            self.costbasisGBPpercoin = 0
+            self.native_cost_per_coin = 0
+            self.native_proceed_value_per_coin = 0
         else:
-            self.costbasisGBPpercoin = self.sell_value_gbp / self.buy_amount
+            self.native_cost_per_coin = self.sell_value_gbp / self.buy_amount
+            self.native_proceed_value_per_coin = self.buy_value_gbp / self.buy_amount
 
     @staticmethod
     def from_csv(row):
@@ -290,7 +292,7 @@ def gain_from_pair(disposal, corresponding_buy):
         # limit the amount to the amount sold
         amount_disposal_accounted_for = disposal.sell_amount
 
-    cost_basis = corresponding_buy.costbasisGBPpercoin * amount_disposal_accounted_for
+    cost_basis = corresponding_buy.native_cost_per_coin * amount_disposal_accounted_for
     proceeds = disposal.buy_value_gbp * (amount_disposal_accounted_for / disposal.sell_amount)
 
     gain = Gain(GainType.FIFO, amount_disposal_accounted_for, proceeds, cost_basis, disposal, corresponding_buy)
@@ -347,7 +349,7 @@ def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basi
         if earlier_trade.date < disposal.date:
 
             if currency_match(disposal, earlier_trade):
-                cost_basis_sum += earlier_trade.costbasisGBPpercoin * earlier_trade.buy_amount
+                cost_basis_sum += earlier_trade.native_cost_per_coin * earlier_trade.buy_amount
                 amount_bought_sum += earlier_trade.buy_amount
     if amount_bought_sum - accounted_for_disposal_amount == 0:
         return 0
