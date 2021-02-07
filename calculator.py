@@ -22,6 +22,7 @@
 #   * Random date order CSV => chronological order
 #   * correct date order CSV => chronological order
 #   * gifts
+#   * disposal with no corresponding buy --- should be costbasis of 0
 
 # TODO: work out for Gift/Tips
 # TODO: work out other currencies
@@ -193,7 +194,7 @@ def viable_bnb_match(disposal, corresponding_buy):
     # TODO: confirm no out-by-one error
     return currency_match(disposal,
                           corresponding_buy) and disposal.date + timedelta(
-        days=30) >= corresponding_buy.date > disposal.date
+        days=31) >= corresponding_buy.date > disposal.date
 
 
 def gain_from_pair(disposal, corresponding_buy):
