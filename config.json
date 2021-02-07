@@ -1,9 +1,15 @@
 {
   "tradelist_filename": "trade-list.csv",
   "fee_list_filename": "fee-calculation.csv",
-  //  2018 taxyear is 2017/18 taxyear and starts 06/04/2017
   "tax_year": 2020,
-  "annual_untaxable_allowance": {"2015": 11000, "2016": 11100, "2017": 11100, "2018": 11300, "2019": 11700, "2020": 12300}
+  "annual_untaxable_allowance": {
+    "2015": 11000, 
+    "2016": 11100, 
+    "2017": 11100, 
+    "2018": 11300, 
+    "2019": 11700, 
+    "2020": 12300
+  },
   "trade_csv_indices": {
     "buy": 2,
     "currency_buy": 3,
