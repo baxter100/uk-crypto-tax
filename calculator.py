@@ -17,12 +17,16 @@
 # output results
 #
 
+# Assumptions
+#   * All dates are UTC
+
 # Test Ideas
 #   * Badly formatted CSV => errors
 #   * Random date order CSV => chronological order
 #   * correct date order CSV => chronological order
 #   * gifts
 #   * disposal with no corresponding buy --- should be costbasis of 0
+#   * A BnB check with edge cases (29 days, 30 days, 31 days)
 
 # TODO: work out for Gift/Tips
 # TODO: work out other currencies
@@ -34,7 +38,7 @@ import sys
 import csv
 import logging
 from datetime import datetime, timedelta
-from enum import IntEnum
+from enum import IntEnum, Enum
 
 from typing import List
 
@@ -44,6 +48,28 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
+
+# TODO: Load this in from config file (but maybe still have as enum)
+class FeeColumn(IntEnum):
+    FEE_AMOUNT = 2
+    FEE_CURRENCY = 3
+    FEE_VALUE_GBP_THEN = 4
+    FEE_VALUE_GBP_NOW = 5
+    TRADE_BUY_AMOUNT = 6
+    TRADE_BUY_CURRENCY = 7
+    TRADE_SELL_AMOUNT = 8
+    TRADE_SELL_CURRENCY = 9
+    EXCHANGE = 10
+    DATE = 11
+
+
+class GainType(Enum):
+    FIFO = 1
+    AVERAGE = 3
+
+
+# TODO: Have all of these be loaded in from config file
+BNB_TIME_DURATION = timedelta(days=30)
 
 class TradeColumn(IntEnum):
     BUY_AMOUNT = 2
@@ -60,8 +86,8 @@ class TradeColumn(IntEnum):
 
 
 DATE_FORMAT = "%d.%m.%Y %H:%M"
-BASE_FIAT_CURRENCY = "GBP"
-#### List of possible fiat currencies (currently just GBP)
+NATIVE_CURRENCY = "GBP"
+# List of possible fiat currencies (currently just GBP)
 fiat_list = ["GBP"]
 
 
@@ -79,7 +105,7 @@ class Trade:
         self.exchange = exchange
 
         # QUESTION: What if you sell something you bought last tax year? 100% profit?
-        self.trade_is_buy = self.buy_currency != BASE_FIAT_CURRENCY
+        self.trade_is_buy = self.buy_currency != NATIVE_CURRENCY
         self.amount_accounted = 0
 
         #
@@ -108,26 +134,90 @@ def read_csv_into_trade_list(csv_filename):
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             next(reader)  # Ignore Header Row
-            datalist = [Trade.from_csv(row) for row in list(reader)]
-            datalist.sort(key=lambda trade: trade.date)
-            logger.debug(f"Loaded {len(datalist)} trades from {csv_filename}")
-            return datalist
+            trades = [Trade.from_csv(row) for row in list(reader)]
+            trades.sort(key=lambda trade: trade.date)
+            logger.debug(f"Loaded {len(trades)} trades from {csv_filename}.")
+            return trades
+    except FileNotFoundError as e:
+        logger.error(f"Could not find fees csv: '{csv_filename}'.")
+        raise
     except Exception as e:
         raise
         # TODO: Test with various wrong csvs and create nice error messages
 
+def read_csv_into_fee_list(csv_filename):
+    try:
+        with open(csv_filename, encoding='utf-8') as csv_file:
+            reader = csv.reader(csv_file)
+            next(reader) # Ignore header row
+            fees = [Fee.from_csv(row) for row in list(reader)]
+            logger.debug(f"Loaded {len(fees)} fees from {csv_filename}.")
+            return fees
+    except FileNotFoundError as e:
+        logger.error(f"Could not find fees csv: '{csv_filename}'.")
+        return []
+    except Exception as e:
+        raise
+        # TODO: Test with various wrong csvs and create nice error messages
+
+def fee_matches_trade(fee, trade):
+    return trade.date == fee.date and \
+           trade.sell_currency == fee.trade_sell_currency and \
+           trade.sell_amount == fee.trade_sell_amount and \
+           trade.buy_currency == fee.trade_buy_currency and \
+           trade.buy_amount == fee.trade_buy_amount
+
+def assign_fees_to_trades(trades, fees):
+    for fee in fees:
+        trades = [t for t in trades if fee_matches_trade(fee, t)]
+        if len(trades) == 0:
+            logger.warn(f"Could not find trade for fee {fee}.")
+        elif len(trades) > 1:
+            logger.error(f"Found multiple trades for fee {fee}.")
+        else:
+            trade = trades[0]
+            trade.fee_value_gbp = fee.fee_value_gbp_then
+
+class Fee:
+
+    def __init__(self, fee_amount, fee_currency, fee_value_gbp_at_trade, fee_value_gbp_now, trade_buy_amount,
+                 trade_buy_currency, trade_sell_amount, trade_sell_currency, date, exchange):
+        self.fee_amount = fee_amount
+        self.fee_currency = fee_currency
+        self.fee_value_gbp_at_trade = fee_value_gbp_at_trade
+        self.fee_value_gbp_now = fee_value_gbp_now
+        self.trade_buy_amount = trade_buy_amount
+        self.trade_buy_currency = trade_buy_currency
+        self.trade_sell_amount = trade_sell_amount
+        self.trade_sell_currency = trade_sell_currency
+        self.date = date
+        self.exchange = exchange
+
+    @staticmethod
+    def from_csv(row):
+        return Fee(float(row[FeeColumn.FEE_AMOUNT]),
+                   row[FeeColumn.FEE_CURRENCY],
+                   float(row[FeeColumn.FEE_VALUE_GBP_THEN]),
+                   float(row[FeeColumn.FEE_VALUE_GBP_NOW]),
+                   float(row[FeeColumn.TRADE_BUY_AMOUNT]),
+                   row[FeeColumn.TRADE_BUY_CURRENCY],
+                   float(row[FeeColumn.TRADE_SELL_AMOUNT]),
+                   row[FeeColumn.TRADE_SELL_CURRENCY],
+                   row[FeeColumn.DATE],
+                   row[FeeColumn.EXCHANGE])
 
 class Gain:
     # Gain is a pair of whole or partially matched trades where proceeds and costbasis have been calculated.
-    def __init__(self, disposal_amount, proceeds, cost_basis, disposal: Trade, corresponding_buy: Trade = None):
+    def __init__(self, gain_type: GainType, disposal_amount, proceeds, cost_basis, disposal: Trade,
+                 corresponding_buy: Trade = None):
+
+        self.gain_type = gain_type
 
         self.currency = disposal.sell_currency
         self.date_sold = disposal.date
 
         self.sold_location = disposal.exchange
-
-        self.date_acquired = corresponding_buy.date
-        self.bought_location = corresponding_buy.exchange
+        self.corresponding_buy = corresponding_buy
 
         # amount of disposal currency accounted for
         self.disposal_amount = disposal_amount
@@ -145,10 +235,8 @@ class Gain:
             self.fee = 0
 
     def __str__(self):
-        return "Amount: " + str(self.disposal_amount) + " Currency: " + str(self.currency) + " Date Acquired: " + str(
-            self.date_acquired.strftime("%d.%m.%Y %H:%M")) + " Date Sold: " + str(
-            self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
-            self.bought_location) + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
+        return "Amount: " + str(self.disposal_amount) + " Currency: " + str(self.currency) + " Date Acquired: " + " Date Sold: " + str(
+            self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
             self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
             self.fee) + " Gain/Loss in GBP: " + str(self.gain_loss)
 
@@ -156,23 +244,11 @@ class Gain:
         return str(self)
 
 
-def read_csv_into_fee_list(csv_filename):
-    pass
-
-
-def taxyearstart(taxyear):
-    ### Get's beginning of tax year e.g.
-    ### 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
-    return datetime(taxyear - 1, 4, 6)
-
-
-def taxyearend(taxyear):
-    return datetime(taxyear, 4, 6)  # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
-
-
-def taxdatecheck(trade, taxyear):
+def within_tax_year(trade, tax_year):
+    tax_year_start = datetime(tax_year - 1, 4, 6) ### 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
+    tax_year_end = datetime(tax_year, 4, 6) # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
     ### Checks trade is in correct year
-    return taxyearstart(taxyear) <= trade.date <= taxyearend(taxyear)
+    return tax_year_start <= trade.date < tax_year_end
 
 
 def viable_sell(disposal):
@@ -202,7 +278,7 @@ def viable_bnb_match(disposal, corresponding_buy):
     # This is inclusive of the next 30 days.
     return currency_match(disposal,
                           corresponding_buy) and disposal.date.date() + timedelta(
-        days=30) > corresponding_buy.date.date() > disposal.date.date()
+        days=31) > corresponding_buy.date.date() > disposal.date.date()
 
 
 def gain_from_pair(disposal, corresponding_buy):
@@ -217,7 +293,7 @@ def gain_from_pair(disposal, corresponding_buy):
     cost_basis = corresponding_buy.costbasisGBPpercoin * amount_disposal_accounted_for
     proceeds = disposal.buy_value_gbp * (amount_disposal_accounted_for / disposal.sell_amount)
 
-    gain = Gain(amount_disposal_accounted_for, proceeds, cost_basis, disposal, corresponding_buy)
+    gain = Gain(GainType.FIFO, amount_disposal_accounted_for, proceeds, cost_basis, disposal, corresponding_buy)
     print(gain)
     return gain
 
@@ -241,7 +317,7 @@ def calculate_fifo_gains(trade_list, tax_year, trade_match_condition):
 
                 if trade_match_condition(disposal, corresponding_buy):
                     calculated_gain = gain_from_pair(disposal, corresponding_buy)
-                    if taxdatecheck(disposal, tax_year):
+                    if within_tax_year(disposal, tax_year):
                         # Only add gains from tax year, but need to go through all trades.
                         fifototal += calculated_gain.gain_loss  # adds gain from this pair to total
                         print(calculated_gain.gain_loss)
@@ -293,7 +369,7 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
             accounted_for_cost_basis += costbasis
             accounted_for_disposal_amount += disposal.sell_amount
 
-            if taxdatecheck(disposal, taxyear):
+            if within_tax_year(disposal, taxyear):
                 total_gain_loss += disposal.buy_value_gbp - costbasis
 
             append_gain_info_to_output()
@@ -326,5 +402,7 @@ def output_to_html(results, html_filename):
 
 if __name__ == "__main__":
     trades = read_csv_into_trade_list("examples/sample-trade-list.csv")
+    fees = read_csv_into_fee_list("examples/sample-fee-list.csv")
+    assign_fees_to_trades(trades, fees)
     capital_gains = calculate_capital_gain(trades)
     output_to_html(capital_gains, "tax-report.html")
