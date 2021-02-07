@@ -42,10 +42,10 @@ from enum import IntEnum, Enum
 from typing import List
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-# TODO: Have confis option of logging location
+# TODO: Have config option of logging location
 handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 
@@ -80,7 +80,7 @@ class FeeColumn(IntEnum):
 
 class GainType(Enum):
     FIFO = 1
-    AVERAGE = 3
+    AVERAGE = 2
 
 
 # TODO: Have all of these be loaded in from config file
@@ -165,6 +165,7 @@ class Gain:
 
         self.sold_location = disposal.exchange
         self.corresponding_buy = corresponding_buy
+        self.disposal_trade = disposal
 
         # amount of disposal currency accounted for
         self.disposal_amount = disposal_amount
@@ -286,23 +287,23 @@ def update_trade_list_after_fifo_pair():
     pass
 
 
-def calculate_day_gains_fifo(trade_list, tax_year):
+def calculate_day_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         currency_match(disposal, corresponding_buy) and \
         date_match(disposal, corresponding_buy)
                                                     
-    return calculate_fifo_gains(trade_list, tax_year, condition)
+    return calculate_fifo_gains(trade_list, condition)
 
 
-def calculate_bnb_gains_fifo(trade_list, tax_year):
+def calculate_bnb_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         currency_match(disposal, corresponding_buy) and \
         disposal.date < corresponding_buy.date <= (disposal.date + BNB_TIME_DURATION)
 
-    return calculate_fifo_gains(trade_list, tax_year, condition)
+    return calculate_fifo_gains(trade_list, condition)
 
 
-def calculate_fifo_gains(trade_list, tax_year, trade_match_condition):
+def calculate_fifo_gains(trade_list, trade_match_condition):
     gains = []
     for disposal in [trade for trade in trade_list if trade.is_viable_sell]:
         for corresponding_buy in trade_list:
@@ -335,7 +336,7 @@ def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accoun
                     amount_bought_sum - accounted_for_disposal_amount)
 
 
-def calculate_average_gains_for_asset(tax_year, asset, trade_list: List[Trade]):
+def calculate_average_gains_for_asset(asset, trade_list: List[Trade]):
     # 404 holdings is calculated for each non-fiat asset.
     gains = []
     accounted_for_cost_basis = 0
@@ -350,31 +351,31 @@ def calculate_average_gains_for_asset(tax_year, asset, trade_list: List[Trade]):
             gain = None  # TODO: Create Gain object
             # TODO: Set gain object's "gain amount" to what was previously being added to a total_gains number
             # gain.native_currency_gain_value = disposal.buy_value_gbp - costbasis
-            gains.append(gain)
+            # gains.append(gain)
 
             update_trade_list_after_avg_pair()
 
     return gains
 
 
-def calculate_average_gains(trade_list, tax_year):
+def calculate_average_gains(trade_list):
     gains = []
     crypto_list = []
     for trade in trade_list:
         if trade.sell_currency not in crypto_list and trade.sell_currency not in fiat_list:
             crypto_list.append(trade.sell_currency)
-            gains.extend(calculate_average_gains_for_asset(tax_year, trade.sell_currency, trade_list))
+            gains.extend(calculate_average_gains_for_asset(trade.sell_currency, trade_list))
     return gains
 
 
 def calculate_capital_gain(trade_list, tax_year):
     gains = []
-    for i, trade in enumerate(trade_list):
-        print(trade.date, "::", trade.buy_amount, trade.buy_currency, "=", trade.sell_value_gbp, "GBP")
-    gains.extend(calculate_day_gains_fifo(trade_list, tax_year))
-    gains.extend(calculate_bnb_gains_fifo(trade_list, tax_year))
-    gains.extend(calculate_average_gains(trade_list, tax_year))
-    return gains
+    # for i, trade in enumerate(trade_list):
+        # logger.debug(f"{trade.date} :: {trade.buy_amount} {trade.buy_currency} = {trade.sell_value_gbp} GBP")
+    gains.extend(calculate_day_gains_fifo(trade_list))
+    gains.extend(calculate_bnb_gains_fifo(trade_list))
+    gains.extend(calculate_average_gains(trade_list))
+    return [g for g in gains if within_tax_year(g.disposal_trade, tax_year)]
 
 
 def output_to_html(results, html_filename):
