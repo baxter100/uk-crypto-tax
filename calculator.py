@@ -84,12 +84,10 @@ class GainType(Enum):
 
 
 # TODO: Have all of these be loaded in from config file
-BNB_TIME_DURATION = timedelta(days=30)
+BNB_TIME_DURATION = timedelta(days=31) # 31, because using less than (to allow for times past midnight on the 30th day)
 DATE_FORMAT = "%d.%m.%Y %H:%M"
 NATIVE_CURRENCY = "GBP"
 TAX_YEAR = 2020
-#### List of possible fiat currencies (currently just GBP)
-fiat_list = ["GBP"]
 
 
 class Trade:
@@ -106,9 +104,8 @@ class Trade:
         self.exchange = exchange
         self.fee = None # Set later from fee datafile
         self.is_viable_sell = self.sell_currency != NATIVE_CURRENCY and \
-                           self.sell_currency != "" and \
-                           self.sell_amount > 0
-
+                              self.sell_currency != "" and \
+                              self.sell_amount > 0
 
         self.native_value_per_coin = 0
         if self.buy_amount != 0:
@@ -250,7 +247,7 @@ def within_tax_year(trade, tax_year):
     tax_year_start = datetime(tax_year - 1, 4, 6) ### 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
     tax_year_end = datetime(tax_year, 4, 6) # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
     ### Checks trade is in correct year
-    return tax_year_start <= trade.date <= tax_year_end
+    return tax_year_start <= trade.date < tax_year_end
 
 
 def date_match(disposal, corresponding_buy):
@@ -295,7 +292,7 @@ def calculate_day_gains_fifo(trade_list):
 def calculate_bnb_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         currency_match(disposal, corresponding_buy) and \
-        disposal.date < corresponding_buy.date <= (disposal.date + BNB_TIME_DURATION)
+        disposal.date < corresponding_buy.date < (disposal.date + BNB_TIME_DURATION)
 
     return calculate_fifo_gains(trade_list, condition)
 
@@ -359,7 +356,7 @@ def calculate_average_gains(trade_list):
     gains = []
     crypto_list = []
     for trade in trade_list:
-        if trade.sell_currency not in crypto_list and trade.sell_currency not in fiat_list:
+        if trade.sell_currency not in crypto_list and trade.sell_currency != NATIVE_CURRENCY:
             crypto_list.append(trade.sell_currency)
             gains.extend(calculate_average_gains_for_asset(trade.sell_currency, trade_list))
     return gains
