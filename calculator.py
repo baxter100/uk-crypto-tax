@@ -191,10 +191,10 @@ def viable_day_match(disposal, corresponding_buy):
 
 
 def viable_bnb_match(disposal, corresponding_buy):
-    # TODO: confirm no out-by-one error
+    # This is inclusive of the next 30 days.
     return currency_match(disposal,
-                          corresponding_buy) and disposal.date + timedelta(
-        days=31) >= corresponding_buy.date > disposal.date
+                          corresponding_buy) and disposal.date.date() + timedelta(
+        days=30) > corresponding_buy.date.date() > disposal.date.date()
 
 
 def gain_from_pair(disposal, corresponding_buy):
