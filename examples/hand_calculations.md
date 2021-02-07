@@ -74,7 +74,7 @@ Total gains from avg trades = -£1.13446048 + £128.2942 = £127.1597395
 
 Total capital gains are therefore:
 
-£52.5 - £24.8019802 + £127.1597395 = $154.8577593
+£52.5 - £24.8019802 + £127.1597395 = £154.8577593
 
 Note: this does not account for any fees
 
