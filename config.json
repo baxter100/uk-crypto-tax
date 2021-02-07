@@ -1,0 +1,43 @@
+{
+  "tradelist_filename": "trade-list.csv",
+  "fee_list_filename": "fee-calculation.csv",
+  //  2018 taxyear is 2017/18 taxyear and starts 06/04/2017
+  "tax_year": 2020,
+  "annual_untaxable_allowance": {"2015": 11000, "2016": 11100, "2017": 11100, "2018": 11300, "2019": 11700, "2020": 12300}
+  "trade_csv_indices": {
+    "buy": 2,
+    "currency_buy": 3,
+    "buy_value_btc": 4,
+    "buy_value_gbp": 5,
+    "sell": 6,
+    "currency_sell": 7,
+    "sell_value_btc": 8,
+    "sell_value_gbp": 9,
+    "exchange": 11,
+    "date": 13
+  },
+  "trade_floats": [
+    "buy",
+    "buy_value_btc",
+    "buy_value_gbp",
+    "sell",
+    "sell_value_gbp",
+    "sell_value_btc"
+
+  ],
+  "trade_strings": [
+    "currency_buy",
+    "currency_sell",
+    "exchange"
+
+  ],
+
+  "fee_csv_indices": {
+    "fee": 2,
+    "currency_fee": 3,
+    "fee_value_gbp": 4,
+    "buy": 6,
+    "sell": 8,
+    "date": 11
+  }
+}
