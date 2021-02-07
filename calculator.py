@@ -104,7 +104,7 @@ class Trade:
         self.sell_value_gbp = sell_value_gbp
         self.date = date
         self.exchange = exchange
-        self.fee_value_gbp = None # Set later from fee datafile
+        self.fee = None # Set later from fee datafile
         self.is_viable_sell = self.sell_currency != NATIVE_CURRENCY and \
                            self.sell_currency != "" and \
                            self.sell_amount > 0
@@ -176,11 +176,9 @@ class Gain:
         # gain doesn't account for fees
         self.native_currency_gain_value = self.proceeds - self.cost_basis
 
-        if hasattr(disposal, "fee_value_gbp"):
-            # TODO change to associated fee, which represents portion of sale
-            self.fee = disposal.fee_value_gbp
-        else:
-            self.fee = 0
+        self.fee_value_gbp = 0
+        if disposal.fee:
+            self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade
 
     def __str__(self):
         return "Amount: " + str(self.disposal_amount) + " Currency: " + str(self.currency) + " Date Acquired: " + str(
@@ -245,8 +243,7 @@ def assign_fees_to_trades(trades, fees):
         elif len(trades) > 1:
             logger.error(f"Found multiple trades for fee {fee}.")
         else:
-            trade = trades[0]
-            trade.fee_value_gbp = fee.fee_value_gbp_then
+            trades[0].fee = fee
 
 
 def within_tax_year(trade, tax_year):
