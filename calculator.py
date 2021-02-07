@@ -87,6 +87,7 @@ class GainType(Enum):
 BNB_TIME_DURATION = timedelta(days=30)
 DATE_FORMAT = "%d.%m.%Y %H:%M"
 NATIVE_CURRENCY = "GBP"
+TAX_YEAR = 2020
 #### List of possible fiat currencies (currently just GBP)
 fiat_list = ["GBP"]
 
@@ -334,7 +335,7 @@ def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accoun
                     amount_bought_sum - accounted_for_disposal_amount)
 
 
-def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
+def calculate_average_gains_for_asset(tax_year, asset, trade_list: List[Trade]):
     # 404 holdings is calculated for each non-fiat asset.
     gains = []
     accounted_for_cost_basis = 0
@@ -347,6 +348,7 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
             accounted_for_cost_basis += costbasis
             accounted_for_disposal_amount += disposal.sell_amount
             gain = None  # TODO: Create Gain object
+            # TODO: Set gain object's "gain amount" to what was previously being added to a total_gains number
             # gain.native_currency_gain_value = disposal.buy_value_gbp - costbasis
             gains.append(gain)
 
@@ -355,21 +357,24 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
     return gains
 
 
-def calculate_average_gains(taxyear, trade_list):
-    averagetotal = 0
+def calculate_average_gains(trade_list, tax_year):
+    gains = []
     crypto_list = []
     for trade in trade_list:
         if trade.sell_currency not in crypto_list and trade.sell_currency not in fiat_list:
             crypto_list.append(trade.sell_currency)
-            averagetotal += calculate_average_gains_for_asset(taxyear, trade.sell_currency, trade_list)
+            gains.extend(calculate_average_gains_for_asset(tax_year, trade.sell_currency, trade_list))
+    return gains
 
-    return averagetotal
 
-
-def calculate_capital_gain(trade_list):
+def calculate_capital_gain(trade_list, tax_year):
+    gains = []
     for i, trade in enumerate(trade_list):
         print(trade.date, "::", trade.buy_amount, trade.buy_currency, "=", trade.sell_value_gbp, "GBP")
-    return 10
+    gains.extend(calculate_day_gains_fifo(trade_list, tax_year))
+    gains.extend(calculate_bnb_gains_fifo(trade_list, tax_year))
+    gains.extend(calculate_average_gains(trade_list, tax_year))
+    return gains
 
 
 def output_to_html(results, html_filename):
@@ -381,5 +386,5 @@ if __name__ == "__main__":
     trades = read_csv_into_trade_list("examples/sample-trade-list.csv")
     fees = read_csv_into_fee_list("examples/sample-fee-list.csv")
     assign_fees_to_trades(trades, fees)
-    capital_gains = calculate_capital_gain(trades)
+    capital_gains = calculate_capital_gain(trades, TAX_YEAR)
     output_to_html(capital_gains, "tax-report.html")
