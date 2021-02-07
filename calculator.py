@@ -234,8 +234,9 @@ def calculate_fifo_gains(trade_list, tax_year, trade_match_condition):
                     if taxdatecheck(disposal, tax_year):
                         # Only add gains from tax year, but need to go through all trades.
                         fifototal += calculated_gain.gain_loss  # adds gain from this pair to total
-                    update_trade_list_after_fifo_pair()
+
                     append_gain_info_to_output()
+                    update_trade_list_after_fifo_pair()
 
     return fifototal
 
@@ -281,10 +282,12 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
                                                    trade_list)
             accounted_for_cost_basis += costbasis
             accounted_for_disposal_amount += disposal.sell_amount
-            update_trade_list_after_avg_pair()
+
             if taxdatecheck(disposal, taxyear):
                 total_gain_loss += disposal.buy_value_gbp - costbasis
+
             append_gain_info_to_output()
+            update_trade_list_after_avg_pair()
 
     return total_gain_loss
 
