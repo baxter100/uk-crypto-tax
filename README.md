@@ -1,5 +1,7 @@
 ## UK Capital Gains Calculator for Cryptocurrency Trades
 
+This repo is intended as a cleaner version the original, which seems to be outdated and messy.
+
 ### Table of Contents
 1. [Introduction](#introduction)
 2. [Disclaimer](#disclaimer)
