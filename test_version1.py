@@ -36,17 +36,19 @@ class Test(unittest.TestCase):
 
         self.assertFalse(viable_bnb_match(disposal, buy1))
 
-        buy2_date = datetime.strptime("16.03.2021 18:13", DATE_FORMAT)
+        buy2_date = datetime.strptime("15.04.2021 18:13", DATE_FORMAT)
         buy2 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy2_date,
                  "exchange")
 
-        self.assertTrue(viable_bnb_match(disposal, buy2))
+        self.assertFalse(viable_bnb_match(disposal, buy2))
 
-        buy3_date = datetime.strptime("15.04.2021 18:13", DATE_FORMAT)
+        buy3_date = datetime.strptime("15.04.2021 00:00", DATE_FORMAT)
         buy3 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy3_date,
                  "exchange")
 
-        self.assertTrue(viable_bnb_match(disposal, buy3))
+        self.assertFalse(viable_bnb_match(disposal, buy3))
+
+
 
         buy4_date = datetime.strptime("16.04.2021 18:13", DATE_FORMAT)
         buy4 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy4_date,
@@ -54,13 +56,33 @@ class Test(unittest.TestCase):
 
         self.assertFalse(viable_bnb_match(disposal, buy4))
 
+        buy5_date = datetime.strptime("14.04.2021 19:13", DATE_FORMAT)
+        buy5 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy5_date,
+                 "exchange")
+
+        self.assertTrue(viable_bnb_match(disposal, buy5))
+
     def test_gains(self):
         day_gains = 52.5
         bnb_gains = 24.8019802
         avg_gains = 127.1597395
         total_gains = 154.8577593
 
-        pass
+        trade_list = read_csv_into_trade_list(sample_csv)
+
+        calculated_day = calculate_day_gains_fifo(trade_list, 2018)
+
+        calculated_bnb = calculate_bnb_gains_fifo(trade_list, 2018)
+
+        calculated_avg = calculate_average_gains(2018, trade_list)
+
+        # calculated_total = calculate_capital_gain(trade_list)
+
+        self.assertEqual(day_gains, calculated_day)
+        self.assertEqual(bnb_gains,calculated_bnb)
+        self.assertEqual(avg_gains,calculated_avg)
+        # self.assertEqual(total_gains,calculated_total)
+
 
 
 if __name__ == '__main__':

@@ -99,6 +99,9 @@ class Trade:
                      datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
                      row[TradeColumn.EXCHANGE])
 
+    def __str__(self):
+        return "buy_amount: " + str(self.buy_amount) + " Buy Currency: " + str(self.buy_currency) + " Date : " + str(
+            self.date.strftime("%d.%m.%Y %H:%M"))
 
 def read_csv_into_trade_list(csv_filename):
     try:
@@ -186,7 +189,13 @@ def currency_match(disposal, corresponding_buy):
 
 
 def viable_day_match(disposal, corresponding_buy):
-    return date_match(disposal, corresponding_buy) and currency_match(disposal, corresponding_buy)
+    if date_match(disposal, corresponding_buy) and currency_match(disposal, corresponding_buy):
+        print(disposal)
+        print(corresponding_buy)
+        return True
+    else:
+        return False
+
 
 
 def viable_bnb_match(disposal, corresponding_buy):
@@ -209,6 +218,7 @@ def gain_from_pair(disposal, corresponding_buy):
     proceeds = disposal.buy_value_gbp * (amount_disposal_accounted_for / disposal.sell_amount)
 
     gain = Gain(amount_disposal_accounted_for, proceeds, cost_basis, disposal, corresponding_buy)
+    print(gain)
     return gain
 
 
@@ -234,7 +244,7 @@ def calculate_fifo_gains(trade_list, tax_year, trade_match_condition):
                     if taxdatecheck(disposal, tax_year):
                         # Only add gains from tax year, but need to go through all trades.
                         fifototal += calculated_gain.gain_loss  # adds gain from this pair to total
-
+                        print(calculated_gain.gain_loss)
                     append_gain_info_to_output()
                     update_trade_list_after_fifo_pair()
 
