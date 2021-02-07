@@ -106,6 +106,7 @@ class Trade:
         self.is_viable_sell = self.sell_currency != NATIVE_CURRENCY and \
                               self.sell_currency != "" and \
                               self.sell_amount > 0
+        self.proportion_accounted_for = 0
 
         self.native_value_per_coin = 0
         if self.buy_amount != 0:
@@ -153,7 +154,7 @@ class Fee:
 
 class Gain:
     # Gain is a pair of whole or partially matched trades where proceeds and costbasis have been calculated.
-    def __init__(self, gain_type: GainType, disposal_amount, proceeds, cost_basis, disposal: Trade, 
+    def __init__(self, gain_type: GainType, disposal_amount, cost_basis, disposal: Trade, 
                  corresponding_buy: Trade = None):
 
         self.gain_type = gain_type
@@ -163,11 +164,10 @@ class Gain:
         self.sold_location = disposal.exchange
         self.corresponding_buy = corresponding_buy
         self.disposal_trade = disposal
+        self.disposal_amount_accounted = disposal_amount
 
-        # amount of disposal currency accounted for
-        self.disposal_amount = disposal_amount
         # gbp value of disposal amount
-        self.proceeds = proceeds
+        self.proceeds = disposal.buy_value_gbp * disposal_amount
         # cost of acquiring disposed currency
         self.cost_basis = cost_basis
         # gain doesn't account for fees
@@ -178,7 +178,7 @@ class Gain:
             self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade
 
     def __str__(self):
-        return "Amount: " + str(self.disposal_amount) + " Currency: " + str(self.currency) + " Date Acquired: " + str(
+        return "Amount: " + str(self.disposal_amount_accounted) + " Currency: " + str(self.currency) + " Date Acquired: " + str(
             self.date_acquired.strftime("%d.%m.%Y %H:%M")) + " Date Sold: " + str(
             self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
             self.bought_location) + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
@@ -258,21 +258,15 @@ def currency_match(disposal, corresponding_buy):
 def gain_from_pair(disposal, corresponding_buy):
     # TODO: Note profit uses disposal.buy_value_gbp, not disposal.sell_value_gbp
     #
-    ### Calculate gain when two trades have been matched
-    amount_disposal_accounted_for = corresponding_buy.buy_amount
+    amount_disposal_accounted_for = corresponding_buy.buy_amount / disposal.sell_amount
     if corresponding_buy.buy_amount > disposal.sell_amount:
         # limit the amount to the amount sold
-        amount_disposal_accounted_for = disposal.sell_amount
+        amount_disposal_accounted_for = 1
 
     cost_basis = corresponding_buy.native_value_per_coin * amount_disposal_accounted_for
-    proceeds = disposal.buy_value_gbp * (amount_disposal_accounted_for / disposal.sell_amount)
 
-    gain = Gain(GainType.FIFO, amount_disposal_accounted_for, proceeds, cost_basis, disposal, corresponding_buy)
+    gain = Gain(GainType.FIFO, amount_disposal_accounted_for, cost_basis, disposal, corresponding_buy)
     return gain
-
-
-def update_trade_list_after_fifo_pair():
-    pass
 
 
 def calculate_day_gains_fifo(trade_list):
@@ -293,7 +287,7 @@ def calculate_bnb_gains_fifo(trade_list):
 
 def calculate_fifo_gains(trade_list, trade_match_condition):
     gains = []
-    for disposal in [trade for trade in trade_list if trade.is_viable_sell]:
+    for disposal in [trade for trade in trade_list if trade.is_viable_sell and trade.proportion_accounted_for < 1]:
         for corresponding_buy in trade_list:
             # Trades get updated as this iteration happens, to reduce buy_amount of corresponding buy and sell amount of disposal
             if trade_match_condition(disposal, corresponding_buy):
@@ -303,25 +297,8 @@ def calculate_fifo_gains(trade_list, trade_match_condition):
     return gains
 
 
-### Calculate gains on trades using 404 holdings rule
-def update_trade_list_after_avg_pair():
+def update_trade_list_after_fifo_pair():
     pass
-
-
-def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount, trade_list):
-    cost_basis_sum = 0
-    amount_bought_sum = 0
-    for earlier_trade in trade_list:
-        if earlier_trade.date < disposal.date:
-
-            if currency_match(disposal, earlier_trade):
-                cost_basis_sum += earlier_trade.native_value_per_coin * earlier_trade.buy_amount
-                amount_bought_sum += earlier_trade.buy_amount
-    if amount_bought_sum - accounted_for_disposal_amount == 0:
-        return 0
-    else:
-        return (cost_basis_sum - accounted_for_cost_basis) * disposal.sell_amount / (
-                    amount_bought_sum - accounted_for_disposal_amount)
 
 
 def calculate_average_gains_for_asset(asset, trade_list: List[Trade]):
@@ -340,10 +317,30 @@ def calculate_average_gains_for_asset(asset, trade_list: List[Trade]):
             # TODO: Set gain object's "gain amount" to what was previously being added to a total_gains number
             # gain.native_currency_gain_value = disposal.buy_value_gbp - costbasis
             # gains.append(gain)
-
             update_trade_list_after_avg_pair()
 
     return gains
+
+
+def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount, trade_list):
+    cost_basis_sum = 0
+    amount_bought_sum = 0
+    for earlier_trade in trade_list:
+        if earlier_trade.date < disposal.date:
+
+            if currency_match(disposal, earlier_trade):
+                cost_basis_sum += earlier_trade.native_value_per_coin * earlier_trade.buy_amount
+                amount_bought_sum += earlier_trade.buy_amount
+    if amount_bought_sum - accounted_for_disposal_amount == 0:
+        return 0
+    else:
+        return (cost_basis_sum - accounted_for_cost_basis) * disposal.sell_amount / (
+                    amount_bought_sum - accounted_for_disposal_amount)
+
+
+### Calculate gains on trades using 404 holdings rule
+def update_trade_list_after_avg_pair():
+    pass
 
 
 def calculate_average_gains(trade_list):
@@ -358,8 +355,6 @@ def calculate_average_gains(trade_list):
 
 def calculate_capital_gain(trade_list, tax_year):
     gains = []
-    # for i, trade in enumerate(trade_list):
-        # logger.debug(f"{trade.date} :: {trade.buy_amount} {trade.buy_currency} = {trade.sell_value_gbp} GBP")
     gains.extend(calculate_day_gains_fifo(trade_list))
     gains.extend(calculate_bnb_gains_fifo(trade_list))
     gains.extend(calculate_average_gains(trade_list))
@@ -368,7 +363,9 @@ def calculate_capital_gain(trade_list, tax_year):
 
 def output_to_html(results, html_filename):
     html_text = "<!DOCTYPE html>"
-    # Create html file
+    # TODO: Have format of this file in config file, and pass values to that formatting string.
+    # TODO: Create html file
+
 
 
 def main():
