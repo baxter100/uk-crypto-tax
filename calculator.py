@@ -178,8 +178,7 @@ def viable_sell(disposal):
 
 def date_match(disposal, corresponding_buy):
     # if the days are the same, there must be a better way!:
-    return disposal.date.day == corresponding_buy.date.day and disposal.date.month == corresponding_buy.date.month and disposal.date.year == corresponding_buy.date.year
-
+    return disposal.date.date() == corresponding_buy.date.date()
 
 def currency_match(disposal, corresponding_buy):
     # Matches if proceeds from trade come from buy_trade
