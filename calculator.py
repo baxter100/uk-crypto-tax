@@ -84,7 +84,7 @@ class GainType(Enum):
 
 
 # TODO: Have all of these be loaded in from config file
-BNB_TIME_DURATION = timedelta(days=31) # 31, because using less than (to allow for times past midnight on the 30th day)
+BNB_TIME_DURATION = timedelta(days=30)
 DATE_FORMAT = "%d.%m.%Y %H:%M"
 NATIVE_CURRENCY = "GBP"
 TAX_YEAR = 2020
@@ -250,12 +250,6 @@ def within_tax_year(trade, tax_year):
     return tax_year_start <= trade.date < tax_year_end
 
 
-def date_match(disposal, corresponding_buy):
-    # if the days are the same, there must be a better way!:
-    return disposal.date.date == corresponding_buy.date.date
-    # return disposal.date.day == corresponding_buy.date.day and disposal.date.month == corresponding_buy.date.month and disposal.date.year == corresponding_buy.date.year
-
-
 def currency_match(disposal, corresponding_buy):
     # Matches if proceeds from trade come from buy_trade
     return disposal.sell_currency == corresponding_buy.buy_currency and corresponding_buy.buy_amount > 0
@@ -284,7 +278,7 @@ def update_trade_list_after_fifo_pair():
 def calculate_day_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         currency_match(disposal, corresponding_buy) and \
-        date_match(disposal, corresponding_buy)
+        disposal.date.date() == corresponding_buy.date.date()
                                                     
     return calculate_fifo_gains(trade_list, condition)
 
@@ -292,7 +286,7 @@ def calculate_day_gains_fifo(trade_list):
 def calculate_bnb_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         currency_match(disposal, corresponding_buy) and \
-        disposal.date < corresponding_buy.date < (disposal.date + BNB_TIME_DURATION)
+        disposal.date.date() < corresponding_buy.date.date() < (disposal.date + BNB_TIME_DURATION).date()
 
     return calculate_fifo_gains(trade_list, condition)
 
