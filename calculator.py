@@ -264,7 +264,7 @@ def update_trade_list_after_avg_pair():
     pass
 
 
-def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount, trade_list):
+def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount, trade_list):
     cost_basis_sum = 0
     amount_bought_sum = 0
     for earlier_trade in trade_list:
@@ -276,7 +276,7 @@ def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accoun
     if amount_bought_sum - accounted_for_disposal_amount == 0:
         return 0
     else:
-        return (cost_basis_sum - accounted_for_cost_basis) * disposal.sell_amount / (
+        return (cost_basis_sum - accounted_for_cost_basis)/ (
                     amount_bought_sum - accounted_for_disposal_amount)
 
 
@@ -288,8 +288,8 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
     for disposal in trade_list:
         if disposal.sell_currency == asset and viable_sell(disposal):
             # TODO: make sense of this. I think it's correct but it's confusing
-            costbasis = avg_cost_basis_up_to_trade(disposal, accounted_for_cost_basis, accounted_for_disposal_amount,
-                                                   trade_list)
+            costbasis = avg_cost_basis_per_coin_up_to_trade(disposal, accounted_for_cost_basis, accounted_for_disposal_amount,
+                                                   trade_list) * disposal.sell_amount
             accounted_for_cost_basis += costbasis
             accounted_for_disposal_amount += disposal.sell_amount
 
