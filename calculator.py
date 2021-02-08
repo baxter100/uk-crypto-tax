@@ -103,8 +103,7 @@ class Trade:
         self.sell_value_gbp = sell_value_gbp
         self.date = date
         self.exchange = exchange
-        self.fee = None # Set later from fee datafile
-
+        self.fee = None  # Set later from fee datafile
 
         self.native_value_per_coin = 0
         self.native_cost_per_coin = 0
@@ -114,7 +113,6 @@ class Trade:
 
         self.unaccounted_buy_amount = self.buy_amount
         self.unaccounted_sell_amount = self.sell_amount
-
 
     @staticmethod
     def from_csv(row):
@@ -128,7 +126,7 @@ class Trade:
                      row[TradeColumn.EXCHANGE])
 
     def get_current_cost(self):
-        portion = self.unaccounted_buy_amount/self.buy_amount
+        portion = self.unaccounted_buy_amount / self.buy_amount
         if self.fee is not None:
             raw_cost = self.sell_value_gbp + self.fee.fee_value_gbp_at_trade
         else:
@@ -139,7 +137,7 @@ class Trade:
         return cost
 
     def get_current_disposal_value(self):
-        portion = self.unaccounted_sell_amount/self.sell_amount
+        portion = self.unaccounted_sell_amount / self.sell_amount
         if self.fee is not None:
             raw_cost = self.buy_value_gbp
         else:
@@ -159,7 +157,7 @@ class Trade:
 
 class Fee:
 
-    def __init__(self, fee_amount, fee_currency, fee_value_gbp_at_trade, fee_value_gbp_now, trade_buy_amount, 
+    def __init__(self, fee_amount, fee_currency, fee_value_gbp_at_trade, fee_value_gbp_now, trade_buy_amount,
                  trade_buy_currency, trade_sell_amount, trade_sell_currency, date, exchange):
         self.fee_amount = fee_amount
         self.fee_currency = fee_currency
@@ -189,10 +187,11 @@ class Fee:
         return "buy_amount: " + str(self.buy_amount) + " Buy Currency: " + str(self.buy_currency) + " Date : " + str(
             self.date.strftime("%d.%m.%Y %H:%M"))
 
+
 class Gain:
 
-    def __init__(self, gain_type: GainType, disposal_amount, disposal: Trade, 
-                 corresponding_buy: Optional[Trade], average_cost = None):
+    def __init__(self, gain_type: GainType, disposal_amount, disposal: Trade,
+                 corresponding_buy: Optional[Trade], average_cost=None):
 
         self.gain_type = gain_type
         self.currency = disposal.sell_currency
@@ -318,14 +317,15 @@ def calculate_fifo_gains(trade_list, trade_within_date_range):
     for disposal in trade_list:
         if disposal.is_viable_sell():
             for corresponding_buy in trade_list:
-                if currency_match(disposal, corresponding_buy) and corresponding_buy.buy_amount > 0 and trade_within_date_range(disposal, corresponding_buy) and disposal.is_viable_sell():
+                if currency_match(disposal,
+                                  corresponding_buy) and corresponding_buy.buy_amount > 0 and trade_within_date_range(
+                        disposal, corresponding_buy) and disposal.is_viable_sell():
                     calculated_gain = gain_from_pair(disposal, corresponding_buy)
                     gains.append(calculated_gain)
     return gains
 
 
 def calculate_104_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
-
     number_of_shares_in_pool = 0
     pool_of_actual_cost = 0
     # 104 holdings is calculated for each non-fiat asset.
@@ -347,7 +347,8 @@ def calculate_104_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
                 number_of_shares_to_sell = number_of_shares_in_pool
 
             cost = (pool_of_actual_cost * number_of_shares_to_sell) / number_of_shares_in_pool
-            proceeds = trade.buy_value_gbp * (number_of_shares_to_sell / trade.sell_amount) # Note this doesn't use get_current_disposal_value as number_shares_to_sell may not equal unaccounted sell amount
+            proceeds = trade.buy_value_gbp * (
+                        number_of_shares_to_sell / trade.sell_amount)  # Note this doesn't use get_current_disposal_value as number_shares_to_sell may not equal unaccounted sell amount
             gain = Gain(GainType.AVERAGE, number_of_shares_to_sell, proceeds, cost, trade)
             if within_tax_year(trade, taxyear):
                 gain_list.append(gain)
@@ -363,10 +364,7 @@ def calculate_104_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
                 #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
                 raise ValueError
 
-
-
     return gain_list
-
 
 
 def calculate_future_fifo_gains(trade_list):
