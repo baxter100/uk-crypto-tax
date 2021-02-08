@@ -361,6 +361,9 @@ def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basi
             if currency_match(disposal, earlier_trade):
                 cost_basis_sum += earlier_trade.native_cost_per_coin * earlier_trade.buy_amount
                 amount_bought_sum += earlier_trade.buy_amount
+    if amount_bought_sum == 0:
+        # cost basis is 0 if there is no corresponding buys
+        return 0
     if amount_bought_sum - accounted_for_disposal_amount == 0:
         return 0
     else:
