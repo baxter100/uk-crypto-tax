@@ -71,6 +71,7 @@ class GainType(Enum):
 # TODO: Have all of these be loaded in from config file
 BNB_TIME_DURATION = timedelta(days=30)
 
+
 class TradeColumn(IntEnum):
     BUY_AMOUNT = 2
     BUY_CURRENCY = 3
@@ -131,6 +132,7 @@ class Trade:
         return "buy_amount: " + str(self.buy_amount) + " Buy Currency: " + str(self.buy_currency) + " Date : " + str(
             self.date.strftime("%d.%m.%Y %H:%M"))
 
+
 def read_csv_into_trade_list(csv_filename):
     try:
         with open(csv_filename, encoding='utf-8') as csv_file:
@@ -147,11 +149,12 @@ def read_csv_into_trade_list(csv_filename):
         raise
         # TODO: Test with various wrong csvs and create nice error messages
 
+
 def read_csv_into_fee_list(csv_filename):
     try:
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
-            next(reader) # Ignore header row
+            next(reader)  # Ignore header row
             fees = [Fee.from_csv(row) for row in list(reader)]
             logger.debug(f"Loaded {len(fees)} fees from {csv_filename}.")
             return fees
@@ -162,12 +165,14 @@ def read_csv_into_fee_list(csv_filename):
         raise
         # TODO: Test with various wrong csvs and create nice error messages
 
+
 def fee_matches_trade(fee, trade):
     return trade.date == fee.date and \
            trade.sell_currency == fee.trade_sell_currency and \
            trade.sell_amount == fee.trade_sell_amount and \
            trade.buy_currency == fee.trade_buy_currency and \
            trade.buy_amount == fee.trade_buy_amount
+
 
 def assign_fees_to_trades(trades, fees):
     for fee in fees:
@@ -179,6 +184,7 @@ def assign_fees_to_trades(trades, fees):
         else:
             trade = trades[0]
             trade.fee_value_gbp = fee.fee_value_gbp_then
+
 
 class Fee:
 
@@ -207,6 +213,7 @@ class Fee:
                    row[FeeColumn.TRADE_SELL_CURRENCY],
                    row[FeeColumn.DATE],
                    row[FeeColumn.EXCHANGE])
+
 
 class Gain:
     # Gain is a pair of whole or partially matched trades where proceeds and costbasis have been calculated.
@@ -237,8 +244,10 @@ class Gain:
             self.fee = 0
 
     def __str__(self):
-        return "Amount: " + str(self.disposal_amount) + " Currency: " + str(self.currency) + " Date Acquired: " + " Date Sold: " + str(
-            self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
+        return "Amount: " + str(self.disposal_amount) + " Currency: " + str(
+            self.currency) + " Date Acquired: " + " Date Sold: " + str(
+            self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + " Location of sell: " + str(
+            self.sold_location) + " Proceeds in GBP: " + str(
             self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
             self.fee) + " Gain/Loss in GBP: " + str(self.gain_loss)
 
@@ -247,8 +256,8 @@ class Gain:
 
 
 def within_tax_year(trade, tax_year):
-    tax_year_start = datetime(tax_year - 1, 4, 6) ### 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
-    tax_year_end = datetime(tax_year, 4, 6) # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
+    tax_year_start = datetime(tax_year - 1, 4, 6)  ### 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
+    tax_year_end = datetime(tax_year, 4, 6)  # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
     ### Checks trade is in correct year
     return tax_year_start <= trade.date < tax_year_end
 
@@ -260,6 +269,7 @@ def viable_sell(disposal):
 def date_match(disposal, corresponding_buy):
     # if the days are the same, there must be a better way!:
     return disposal.date.date() == corresponding_buy.date.date()
+
 
 def currency_match(disposal, corresponding_buy):
     # Matches if proceeds from trade come from buy_trade
@@ -273,7 +283,6 @@ def viable_day_match(disposal, corresponding_buy):
         return True
     else:
         return False
-
 
 
 def viable_bnb_match(disposal, corresponding_buy):
@@ -342,7 +351,8 @@ def update_trade_list_after_avg_pair():
     pass
 
 
-def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount, trade_list):
+def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount,
+                                        trade_list):
     cost_basis_sum = 0
     amount_bought_sum = 0
     for earlier_trade in trade_list:
@@ -354,8 +364,8 @@ def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basi
     if amount_bought_sum - accounted_for_disposal_amount == 0:
         return 0
     else:
-        return (cost_basis_sum - accounted_for_cost_basis)/ (
-                    amount_bought_sum - accounted_for_disposal_amount)
+        return (cost_basis_sum - accounted_for_cost_basis) / (
+                amount_bought_sum - accounted_for_disposal_amount)
 
 
 def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
@@ -366,8 +376,9 @@ def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
     for disposal in trade_list:
         if disposal.sell_currency == asset and viable_sell(disposal):
             # TODO: make sense of this. I think it's correct but it's confusing
-            costbasis = avg_cost_basis_per_coin_up_to_trade(disposal, accounted_for_cost_basis, accounted_for_disposal_amount,
-                                                   trade_list) * disposal.sell_amount
+            costbasis = avg_cost_basis_per_coin_up_to_trade(disposal, accounted_for_cost_basis,
+                                                            accounted_for_disposal_amount,
+                                                            trade_list) * disposal.sell_amount
             accounted_for_cost_basis += costbasis
             accounted_for_disposal_amount += disposal.sell_amount
 
