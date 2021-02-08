@@ -125,7 +125,11 @@ class Trade:
                      row[TradeColumn.EXCHANGE])
 
     def is_viable_sell(self):
-        return self.unaccounted_sell_amount > 0 and self.sell_currency != NATIVE_CURRENCY and self.sell_currency != ""    
+        return self.unaccounted_sell_amount > 0 and self.sell_currency != NATIVE_CURRENCY and self.sell_currency != ""
+
+    def __repr__(self):
+        return f"<Trade {self.date} :: {self.buy_amount} {self.buy_currency} ({self.buy_value_gbp} GBP) <- " \
+               f"{self.sell_amount} {self.sell_currency} ({self.sell_value_gbp} GBP)>"
 
 
 class Fee:
@@ -167,15 +171,16 @@ class Gain:
         self.date_sold = disposal.date
 
         self.sold_location = disposal.exchange
-        self.corresponding_buy_trade = None
+        self.corresponding_buy = None
         if corresponding_buy:
-            self.corresponding_buy_trade = corresponding_buy
+            self.corresponding_buy = corresponding_buy
             self.cost_basis = corresponding_buy.native_cost_per_coin * disposal_amount
         else:
             self.cost_basis = average_cost * disposal_amount
         self.disposal_trade = disposal
         self.disposal_amount_accounted = disposal_amount
 
+        # NOTE: profit uses disposal.buy_value_gbp, not disposal.sell_value_gbp
         self.proceeds = disposal.buy_value_gbp * disposal_amount
         self.native_currency_gain_value = self.proceeds - self.cost_basis  # gain doesn't account for fees
 
@@ -184,7 +189,7 @@ class Gain:
             self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade
 
     def __str__(self):
-        return "Amount: " + str(self.disposal_amount_accounted) + " Currency: " + str(self.currency) + " Date Acquired: " + str(
+        return f"Amount: {self.disposal_amount_accounted} Currency: {self.currency}" + " Date Acquired: " + str(
             self.date_acquired.strftime("%d.%m.%Y %H:%M")) + " Date Sold: " + str(
             self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
             self.bought_location) + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
@@ -205,7 +210,7 @@ def read_csv_into_trade_list(csv_filename):
             logger.debug(f"Loaded {len(trades)} trades from {csv_filename}.")
             return trades
     except FileNotFoundError as e:
-        logger.error(f"Could not find fees csv: '{csv_filename}'.")
+        logger.error(f"Could not find trades csv: '{csv_filename}'.")
         raise
     except Exception as e:
         raise
@@ -240,7 +245,7 @@ def assign_fees_to_trades(trades, fees):
     for fee in fees:
         trades = [t for t in trades if fee_matches_trade(fee, t)]
         if len(trades) == 0:
-            logger.warn(f"Could not find trade for fee {fee}.")
+            logger.warn(f"Could not find trade for fee {fee}. Ignoring fee.")
         elif len(trades) > 1:
             logger.error(f"Found multiple trades for fee {fee}.")
         else:
@@ -255,57 +260,43 @@ def within_tax_year(trade, tax_year):
 
 
 def currency_match(disposal, corresponding_buy):
-    # Matches if proceeds from trade come from buy_trade
-    return disposal.sell_currency == corresponding_buy.buy_currency and corresponding_buy.buy_amount > 0
+    return disposal.sell_currency == corresponding_buy.buy_currency
 
 
 def gain_from_pair(disposal, corresponding_buy):
-    # TODO: Read through this
-    # NOTE: profit uses disposal.buy_value_gbp, not disposal.sell_value_gbp
-    amount_disposal_accounted_for = corresponding_buy.buy_amount / disposal.sell_amount
-    if corresponding_buy.buy_amount > disposal.sell_amount:
-        # limit the amount to the amount sold
-        amount_disposal_accounted_for = 1
-
-    gain = Gain(GainType.FIFO, amount_disposal_accounted_for, disposal, corresponding_buy)
+    uncapped_amount = corresponding_buy.unaccounted_buy_amount / disposal.unaccounted_sell_amount
+    disposal_amount_accounted_for = min(1, corresponding_buy.unaccounted_buy_amount / disposal.unaccounted_sell_amount)
+    logger.debug(f"Matched {disposal_amount_accounted_for * 100}% of \n\t{disposal} with \n\t{corresponding_buy}.")
+    gain = Gain(GainType.FIFO, disposal_amount_accounted_for, disposal, corresponding_buy)
+    disposal.unaccounted_sell_amount -= disposal_amount_accounted_for * disposal.unaccounted_sell_amount
+    corresponding_buy.unaccounted_buy_amount -= disposal_amount_accounted_for * corresponding_buy.unaccounted_buy_amount
     return gain
 
 
 def calculate_day_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
-        currency_match(disposal, corresponding_buy) and \
         disposal.date.date() == corresponding_buy.date.date()
-                                                    
     return calculate_fifo_gains(trade_list, condition)
 
 
 def calculate_bnb_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
-        currency_match(disposal, corresponding_buy) and \
         disposal.date.date() < corresponding_buy.date.date() < (disposal.date + BNB_TIME_DURATION).date()
-
     return calculate_fifo_gains(trade_list, condition)
 
 
-def calculate_fifo_gains(trade_list, trade_match_condition):
+def calculate_fifo_gains(trade_list, trade_within_date_range):
     gains = []
     for disposal in trade_list:
         if disposal.is_viable_sell():
             for corresponding_buy in trade_list:
-                # Trades get updated as this iteration happens, to reduce buy_amount of corresponding buy and sell amount of disposal
-                if trade_match_condition(disposal, corresponding_buy):
+                if currency_match(disposal, corresponding_buy) and trade_within_date_range(disposal, corresponding_buy) and disposal.is_viable_sell():
                     calculated_gain = gain_from_pair(disposal, corresponding_buy)
                     gains.append(calculated_gain)
-                    update_trade_list_after_fifo_pair()
     return gains
 
 
-def update_trade_list_after_fifo_pair():
-    # TODO: Write this (and move into calculate_fifo_gains?)
-    pass
-
-
-def calculate_average_gains_for_currency(currency, trade_list: List[Trade]):
+def calculate_104_holding_gains_for_currency(currency, trade_list: List[Trade]):
     # TODO: Read through and Rewrite this
     # 404 holdings is calculated for each non-fiat currency.
     gains = []
@@ -350,22 +341,28 @@ def update_trade_list_after_avg_pair():
     pass
 
 
-def calculate_average_gains(trade_list: List[Trade]):
+def calculate_104_holding_gains(trade_list: List[Trade]):
     # TODO: Read through and Rewrite this
     gains = []
     crypto_list = []
     for trade in trade_list:
         if trade.sell_currency not in crypto_list and trade.sell_currency != NATIVE_CURRENCY: # and trade.unaccounted_sell_amount > 0 ??
             crypto_list.append(trade.sell_currency)
-            gains.extend(calculate_average_gains_for_currency(trade.sell_currency, trade_list))
+            gains.extend(calculate_104_holding_gains_for_currency(trade.sell_currency, trade_list))
     return gains
+
+
+def calculate_future_fifo_gains(trade_list):
+    return []
+    # TODO: Go through future trades
 
 
 def calculate_capital_gain(trade_list: List[Trade]):
     gains = []
     gains.extend(calculate_day_gains_fifo(trade_list))
     gains.extend(calculate_bnb_gains_fifo(trade_list))
-    gains.extend(calculate_average_gains(trade_list))
+    gains.extend(calculate_104_holding_gains(trade_list))
+    gains.extend(calculate_future_fifo_gains(trade_list))
     return gains
 
 
