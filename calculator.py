@@ -327,6 +327,7 @@ def calculate_fifo_gains(trade_list, tax_year, trade_match_condition):
                 # Trades get updated as this iteration happens, to reduce buy_amount of corresponding buy and sell amount of disposal
 
                 if trade_match_condition(disposal, corresponding_buy):
+                    # TODO: add condition to  stop if disposal accounted for.
                     calculated_gain = gain_from_pair(disposal, corresponding_buy)
                     if within_tax_year(disposal, tax_year):
                         # Only add gains from tax year, but need to go through all trades.
