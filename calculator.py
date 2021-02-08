@@ -84,11 +84,6 @@ class FeeColumn(IntEnum):
     DATE = 11
 
 
-class GainType(Enum):
-    FIFO = 1
-    AVERAGE = 2
-
-
 # TODO: Have all of these be loaded in from config file
 BNB_TIME_DURATION = timedelta(days=30)
 DATE_FORMAT = "%d.%m.%Y %H:%M"
@@ -110,6 +105,7 @@ class Trade:
         self.exchange = exchange
         self.fee = None # Set later from fee datafile
 
+
         self.native_value_per_coin = 0
         self.native_cost_per_coin = 0
         if self.buy_amount != 0:
@@ -130,6 +126,28 @@ class Trade:
                      float(row[TradeColumn.SELL_VALUE_GBP]),
                      datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
                      row[TradeColumn.EXCHANGE])
+
+    def get_current_cost(self):
+        portion = self.unaccounted_buy_amount/self.buy_amount
+        if self.fee is not None:
+            raw_cost = self.sell_value_gbp + self.fee.fee_value_gbp_at_trade
+        else:
+            raw_cost = self.sell_value_gbp
+
+        cost = portion * raw_cost
+
+        return cost
+
+    def get_current_disposal_value(self):
+        portion = self.unaccounted_sell_amount/self.sell_amount
+        if self.fee is not None:
+            raw_cost = self.buy_value_gbp + self.fee.fee_value_gbp_at_trade
+        else:
+            raw_cost = self.buy_value_gbp
+
+        cost = portion * raw_cost
+
+        return cost
 
     def is_viable_sell(self):
         return self.unaccounted_sell_amount > 0 and self.sell_currency != NATIVE_CURRENCY and self.sell_currency != ""
@@ -253,14 +271,14 @@ def fee_matches_trade(fee, trade):
 
 def assign_fees_to_trades(trades, fees):
     for fee in fees:
-        trades = [t for t in trades if fee_matches_trade(fee, t)]
-        if len(trades) == 0:
-            logger.warn(f"Could not find trade for fee {fee}.")
-        elif len(trades) > 1:
+        matching_trades = [t for t in trades if fee_matches_trade(fee, t)]
+        if len(matching_trades) == 0:
+            logger.warning(f"Could not find trade for fee {fee}.")
+        elif len(matching_trades) > 1:
             logger.error(f"Found multiple trades for fee {fee}.")
         else:
-            trade = trades[0]
-            trade.fee_value_gbp = fee.fee_value_gbp_then
+            trade = matching_trades[0]
+            trade.fee = fee
 
 
 def within_tax_year(trade, tax_year):
