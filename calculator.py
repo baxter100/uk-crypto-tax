@@ -51,10 +51,10 @@ logger.addHandler(handler)
 
 # TODO: Load this in from config file (but maybe still have as enum)
 class FeeColumn(IntEnum):
-    FEE_AMOUNT = 2
-    FEE_CURRENCY = 3
-    FEE_VALUE_GBP_THEN = 4
-    FEE_VALUE_GBP_NOW = 5
+    FEE_AMOUNT = 1
+    FEE_CURRENCY = 2
+    FEE_VALUE_GBP_THEN = 3
+    FEE_VALUE_GBP_NOW = 4
     TRADE_BUY_AMOUNT = 6
     TRADE_BUY_CURRENCY = 7
     TRADE_SELL_AMOUNT = 8
@@ -73,17 +73,17 @@ BNB_TIME_DURATION = timedelta(days=30)
 
 
 class TradeColumn(IntEnum):
-    BUY_AMOUNT = 2
-    BUY_CURRENCY = 3
-    BUY_VALUE_BTC = 4
-    BUY_VALUE_GBP = 5
-    SELL_AMOUNT = 6
-    SELL_CURRENCY = 7
-    SELL_VALUE_BTC = 8
-    SELL_VALUE_GBP = 9
-    SPREAD = 10
-    EXCHANGE = 11
-    DATE = 13
+    BUY_AMOUNT = 1
+    BUY_CURRENCY = 2
+    BUY_VALUE_BTC = 3
+    BUY_VALUE_GBP = 4
+    SELL_AMOUNT = 5
+    SELL_CURRENCY = 6
+    SELL_VALUE_BTC = 7
+    SELL_VALUE_GBP = 8
+    SPREAD = 9
+    EXCHANGE = 10
+    DATE = 12
 
 
 DATE_FORMAT = "%d.%m.%Y %H:%M"
@@ -346,7 +346,7 @@ def calculate_bnb_gains_fifo(trade_list, tax_year):
     return calculate_fifo_gains(trade_list, tax_year, viable_bnb_match)
 
 
-### Calculate gains on trades using 404 holdings rule
+### Calculate gains on trades using 104 holdings rule
 def update_trade_list_after_avg_pair():
     pass
 
@@ -361,6 +361,9 @@ def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basi
             if currency_match(disposal, earlier_trade):
                 cost_basis_sum += earlier_trade.native_cost_per_coin * earlier_trade.buy_amount
                 amount_bought_sum += earlier_trade.buy_amount
+
+    # TODO: Where disposal is not fully accounted for, need to do FIFO on later trades(after all 104 holdings have been done)
+    #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
     if amount_bought_sum == 0:
         # cost basis is 0 if there is no corresponding buys
         return 0
@@ -372,7 +375,7 @@ def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basi
 
 
 def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
-    # 404 holdings is calculated for each non-fiat asset.
+    # 104 holdings is calculated for each non-fiat asset.
     total_gain_loss = 0
     accounted_for_cost_basis = 0
     accounted_for_disposal_amount = 0
