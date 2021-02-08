@@ -25,6 +25,7 @@
 #   * Random date order CSV => chronological order
 #   * correct date order CSV => chronological order
 #   * gifts
+#   * disposal with no corresponding buy --- should be costbasis of 0
 #   * A BnB check with edge cases (29 days, 30 days, 31 days)
 
 # TODO: work out for Gift/Tips
@@ -49,19 +50,24 @@ handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 
 
+class GainType(Enum):
+    FIFO = 1
+    AVERAGE = 2
+
+
 # TODO: Load this in from config file (but maybe still have as enum)
 class TradeColumn(IntEnum):
-    BUY_AMOUNT = 2
-    BUY_CURRENCY = 3
-    BUY_VALUE_BTC = 4
-    BUY_VALUE_GBP = 5
-    SELL_AMOUNT = 6
-    SELL_CURRENCY = 7
-    SELL_VALUE_BTC = 8
-    SELL_VALUE_GBP = 9
-    SPREAD = 10
-    EXCHANGE = 11
-    DATE = 13
+    BUY_AMOUNT = 1
+    BUY_CURRENCY = 2
+    BUY_VALUE_BTC = 3
+    BUY_VALUE_GBP = 4
+    SELL_AMOUNT = 5
+    SELL_CURRENCY = 6
+    SELL_VALUE_BTC = 7
+    SELL_VALUE_GBP = 8
+    SPREAD = 9
+    EXCHANGE = 10
+    DATE = 12
 
 
 # TODO: Load this in from config file (but maybe still have as enum)
@@ -113,6 +119,7 @@ class Trade:
         self.unaccounted_buy_amount = self.buy_amount
         self.unaccounted_sell_amount = self.sell_amount
 
+
     @staticmethod
     def from_csv(row):
         return Trade(float(row[TradeColumn.BUY_AMOUNT]),
@@ -135,6 +142,39 @@ class Trade:
 class Fee:
 
     def __init__(self, fee_amount, fee_currency, fee_value_gbp_at_trade, fee_value_gbp_now, trade_buy_amount, 
+                 trade_buy_currency, trade_sell_amount, trade_sell_currency, date, exchange):
+        self.fee_amount = fee_amount
+        self.fee_currency = fee_currency
+        self.fee_value_gbp_at_trade = fee_value_gbp_at_trade
+        self.fee_value_gbp_now = fee_value_gbp_now
+        self.trade_buy_amount = trade_buy_amount
+        self.trade_buy_currency = trade_buy_currency
+        self.trade_sell_amount = trade_sell_amount
+        self.trade_sell_currency = trade_sell_currency
+        self.date = date
+        self.exchange = exchange
+
+    @staticmethod
+    def from_csv(row):
+        return Fee(float(row[FeeColumn.FEE_AMOUNT]),
+                   row[FeeColumn.FEE_CURRENCY],
+                   float(row[FeeColumn.FEE_VALUE_GBP_THEN]),
+                   float(row[FeeColumn.FEE_VALUE_GBP_NOW]),
+                   float(row[FeeColumn.TRADE_BUY_AMOUNT]),
+                   row[FeeColumn.TRADE_BUY_CURRENCY],
+                   float(row[FeeColumn.TRADE_SELL_AMOUNT]),
+                   row[FeeColumn.TRADE_SELL_CURRENCY],
+                   row[FeeColumn.DATE],
+                   row[FeeColumn.EXCHANGE])
+
+    def __str__(self):
+        return "buy_amount: " + str(self.buy_amount) + " Buy Currency: " + str(self.buy_currency) + " Date : " + str(
+            self.date.strftime("%d.%m.%Y %H:%M"))
+
+
+class Fee:
+
+    def __init__(self, fee_amount, fee_currency, fee_value_gbp_at_trade, fee_value_gbp_now, trade_buy_amount,
                  trade_buy_currency, trade_sell_amount, trade_sell_currency, date, exchange):
         self.fee_amount = fee_amount
         self.fee_currency = fee_currency
@@ -210,7 +250,7 @@ def read_csv_into_trade_list(csv_filename):
             logger.debug(f"Loaded {len(trades)} trades from {csv_filename}.")
             return trades
     except FileNotFoundError as e:
-        logger.error(f"Could not find trades csv: '{csv_filename}'.")
+        logger.error(f"Could not find fees csv: '{csv_filename}'.")
         raise
     except Exception as e:
         raise
@@ -221,7 +261,7 @@ def read_csv_into_fee_list(csv_filename):
     try:
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
-            next(reader) # Ignore header row
+            next(reader)  # Ignore header row
             fees = [Fee.from_csv(row) for row in list(reader)]
             logger.debug(f"Loaded {len(fees)} fees from {csv_filename}.")
             return fees
@@ -245,17 +285,17 @@ def assign_fees_to_trades(trades, fees):
     for fee in fees:
         trades = [t for t in trades if fee_matches_trade(fee, t)]
         if len(trades) == 0:
-            logger.warn(f"Could not find trade for fee {fee}. Ignoring fee.")
+            logger.warn(f"Could not find trade for fee {fee}.")
         elif len(trades) > 1:
             logger.error(f"Found multiple trades for fee {fee}.")
         else:
-            trades[0].fee = fee
+            trade = trades[0]
+            trade.fee_value_gbp = fee.fee_value_gbp_then
 
 
 def within_tax_year(trade, tax_year):
-    tax_year_start = datetime(tax_year - 1, 4, 6) ### 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
-    tax_year_end = datetime(tax_year, 4, 6) # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
-    ### Checks trade is in correct year
+    tax_year_start = datetime(tax_year - 1, 4, 6)  # 2018 taxyear is 2017/18 taxyear and starts 06/04/2017
+    tax_year_end = datetime(tax_year, 4, 6)  # This needs to be 6 as 05.06.2018 < 05.06.2018 12:31
     return tax_year_start <= trade.date < tax_year_end
 
 
@@ -271,6 +311,11 @@ def gain_from_pair(disposal, corresponding_buy):
     disposal.unaccounted_sell_amount -= disposal_amount_accounted_for * disposal.unaccounted_sell_amount
     corresponding_buy.unaccounted_buy_amount -= disposal_amount_accounted_for * corresponding_buy.unaccounted_buy_amount
     return gain
+
+
+def currency_match(disposal, corresponding_buy):
+    # Matches if proceeds from trade come from buy_trade
+    return disposal.sell_currency == corresponding_buy.buy_currency and corresponding_buy.buy_amount > 0
 
 
 def calculate_day_gains_fifo(trade_list):
@@ -314,31 +359,58 @@ def calculate_104_holding_gains_for_currency(currency, trade_list: List[Trade]):
             # TODO: Set gain object's "gain amount" to what was previously being added to a total_gains number
             # gain.native_currency_gain_value = disposal.buy_value_gbp - costbasis
             gains.append(gain)
-            update_trade_list_after_avg_pair()
-
     return gains
 
 
 def avg_cost_basis_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount, trade_list):
+    return 0
     # TODO: Read through and Rewrite this
+
+
+def avg_cost_basis_per_coin_up_to_trade(disposal: Trade, accounted_for_cost_basis, accounted_for_disposal_amount,
+                                        trade_list):
     cost_basis_sum = 0
     amount_bought_sum = 0
     for earlier_trade in trade_list:
         if earlier_trade.date < disposal.date:
 
             if currency_match(disposal, earlier_trade):
-                cost_basis_sum += earlier_trade.native_value_per_coin * earlier_trade.buy_amount
+                cost_basis_sum += earlier_trade.native_cost_per_coin * earlier_trade.buy_amount
                 amount_bought_sum += earlier_trade.buy_amount
+
+    # TODO: Where disposal is not fully accounted for, need to do FIFO on later trades(after all 104 holdings have been done)
+    #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
+    if amount_bought_sum == 0:
+        # cost basis is 0 if there is no corresponding buys
+        return 0
     if amount_bought_sum - accounted_for_disposal_amount == 0:
         return 0
     else:
-        return (cost_basis_sum - accounted_for_cost_basis) * disposal.sell_amount / (
-                    amount_bought_sum - accounted_for_disposal_amount)
+        return (cost_basis_sum - accounted_for_cost_basis) / (
+                amount_bought_sum - accounted_for_disposal_amount)
 
 
-def update_trade_list_after_avg_pair():
-    # TODO: Write this (and move into calculate_fifo_gains?)
-    pass
+def calculate_average_gains_for_asset(taxyear, asset, trade_list: List[Trade]):
+    # 104 holdings is calculated for each non-fiat asset.
+    total_gain_loss = 0
+    accounted_for_cost_basis = 0
+    accounted_for_disposal_amount = 0
+    for disposal in trade_list:
+        if disposal.sell_currency == asset and viable_sell(disposal):
+            # TODO: make sense of this. I think it's correct but it's confusing
+            costbasis = avg_cost_basis_per_coin_up_to_trade(disposal, accounted_for_cost_basis,
+                                                            accounted_for_disposal_amount,
+                                                            trade_list) * disposal.sell_amount
+            accounted_for_cost_basis += costbasis
+            accounted_for_disposal_amount += disposal.sell_amount
+
+            if within_tax_year(disposal, taxyear):
+                total_gain_loss += disposal.buy_value_gbp - costbasis
+
+            append_gain_info_to_output()
+            update_trade_list_after_avg_pair()
+
+    return total_gain_loss
 
 
 def calculate_104_holding_gains(trade_list: List[Trade]):
