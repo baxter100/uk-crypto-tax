@@ -335,7 +335,7 @@ def calculate_fifo_gains(trade_list, trade_within_date_range):
         if disposal.is_viable_sell():
             for corresponding_buy in trade_list:
                 if currency_match(disposal,
-                                  corresponding_buy) and corresponding_buy.buy_amount > 0 and trade_within_date_range(
+                                  corresponding_buy) and corresponding_buy.unaccounted_buy_amount > 0 and trade_within_date_range(
                     disposal, corresponding_buy) and disposal.is_viable_sell():
                     calculated_gain = gain_from_pair(disposal, corresponding_buy)
                     gains.append(calculated_gain)
