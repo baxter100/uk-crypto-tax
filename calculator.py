@@ -176,7 +176,7 @@ class Fee:
         self.trade_sell_currency = trade_sell_currency
         self.date = date
         self.exchange = exchange
-        print(self)
+
     @staticmethod
     def from_csv(row):
         for ind, val in enumerate(row):
@@ -348,8 +348,6 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
     # 104 holdings is calculated for each non-fiat asset.
     gain_list = []
 
-
-
     for trade in trade_list:
         if trade.buy_currency == asset:
             number_of_shares_in_pool += trade.unaccounted_buy_amount
@@ -364,21 +362,26 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
                 unaccounted_for_amount = number_of_shares_to_sell - number_of_shares_in_pool
                 number_of_shares_to_sell = number_of_shares_in_pool
 
-            average_cost = pool_of_actual_cost / number_of_shares_in_pool
+            if number_of_shares_in_pool != 0:
+                average_cost = pool_of_actual_cost / number_of_shares_in_pool
 
-            gain = Gain(GainType.AVERAGE, number_of_shares_to_sell, trade, average_cost=average_cost)
-            gain_list.append(gain)
-            # then update holding
-            number_of_shares_in_pool -= number_of_shares_to_sell
-            pool_of_actual_cost -= gain.cost_basis
+                gain = Gain(GainType.AVERAGE, number_of_shares_to_sell, trade, average_cost=average_cost)
+                gain_list.append(gain)
+                # then update holding
+                number_of_shares_in_pool -= number_of_shares_to_sell
+                pool_of_actual_cost -= gain.cost_basis
 
-            trade.unaccounted_sell_amount = unaccounted_for_amount
+                trade.unaccounted_sell_amount = unaccounted_for_amount
+            else:
+                # do future fifo
+                pass
 
             if unaccounted_for_amount != 0:
                 # Do future FIFO
                 # TODO: Where disposal is not fully accounted for, need to do FIFO on later trades(after all 104 holdings have been done)
                 #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
-                raise ValueError
+                # raise ValueError
+                pass
 
     return gain_list
 
@@ -391,7 +394,6 @@ def calculate_104_holding_gains(trade_list: List[Trade]):
 
     gains = []
     for asset in non_native_asset_list:
-        print(asset)
         gains.extend(calculate_104_gains_for_asset(asset, trade_list))
 
     return gains
@@ -428,7 +430,7 @@ def main():
     taxable_gain = max(0, year_gains_sum - UNTAXABLE_ALLOWANCE)
 
     print(f"Total gain for tax year {TAX_YEAR}: {year_gains_sum}.")
-    print(f"Total taxable gain for tax year: {TAX_YEAR} -  {UNTAXABLE_ALLOWANCE} = {taxable_gain}.")
+    print(f"Total taxable gain for tax year {TAX_YEAR}: {year_gains_sum}  -  {UNTAXABLE_ALLOWANCE} = {taxable_gain}.")
     output_to_html(capital_gains, "tax-report.html")
 
 
