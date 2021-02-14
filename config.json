@@ -1,49 +1,48 @@
 {
-  "tradelist_filename": "trade-list.csv",
-  "fee_list_filename": "fee-calculation.csv",
-  "tax_year": 2020,
-  "annual_untaxable_allowance": {
-    "2015": 11000, 
-    "2016": 11100, 
-    "2017": 11100, 
-    "2018": 11300, 
-    "2019": 11700, 
+
+  "TAX_YEAR": 2020,
+  "NATIVE_CURRENCY": "GBP",
+  "TRADE_CSV": "trade-list.csv",
+  "FEE_CSV": "fee-calculation.csv",
+
+
+
+  "ANNUAL_UNTAXABLE_ALLOWANCE": {
+    "2015": 11000,
+    "2016": 11100,
+    "2017": 11100,
+    "2018": 11300,
+    "2019": 11700,
     "2020": 12300
   },
-  "trade_csv_indices": {
-    "buy": 2,
-    "currency_buy": 3,
-    "buy_value_btc": 4,
-    "buy_value_gbp": 5,
-    "sell": 6,
-    "currency_sell": 7,
-    "sell_value_btc": 8,
-    "sell_value_gbp": 9,
-    "exchange": 11,
-    "date": 13
+  "BNB_TIME_DURATION": 30,
+
+
+  "DATE_FORMAT": "%d.%m.%Y %H:%M",
+  "TRADE_CSV_INDICES": {
+    "BUY_AMOUNT" : 1,
+    "BUY_CURRENCY" : 2,
+    "BUY_VALUE_BTC" : 3,
+    "BUY_VALUE_GBP" : 4,
+    "SELL_AMOUNT" : 5,
+    "SELL_CURRENCY" : 6,
+    "SELL_VALUE_BTC" : 7,
+    "SELL_VALUE_GBP" : 8,
+    "SPREAD" : 9,
+    "EXCHANGE" : 10,
+    "DATE" : 12
   },
-  "trade_floats": [
-    "buy",
-    "buy_value_btc",
-    "buy_value_gbp",
-    "sell",
-    "sell_value_gbp",
-    "sell_value_btc"
 
-  ],
-  "trade_strings": [
-    "currency_buy",
-    "currency_sell",
-    "exchange"
-
-  ],
-
-  "fee_csv_indices": {
-    "fee": 2,
-    "currency_fee": 3,
-    "fee_value_gbp": 4,
-    "buy": 6,
-    "sell": 8,
-    "date": 11
+  "FEE_CSV_INDICES": {
+    "FEE_AMOUNT" : 2,
+    "FEE_CURRENCY" : 3,
+    "FEE_VALUE_GBP_THEN" : 4,
+    "FEE_VALUE_GBP_NOW" : 5,
+    "TRADE_BUY_AMOUNT" : 6,
+    "TRADE_BUY_CURRENCY" : 7,
+    "TRADE_SELL_AMOUNT" : 8,
+    "TRADE_SELL_CURRENCY" : 9,
+    "EXCHANGE" : 10,
+    "DATE" : 11
   }
 }

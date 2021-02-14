@@ -30,10 +30,9 @@
 
 # TODO: work out for Gift/Tips
 # TODO: work out other currencies
-# TODO: calculate samples by hand to compare
 # TODO: compare methods here with strategy in README and update/note differences
 # TODO: check tax strategy
-
+import json
 import sys
 import csv
 import logging
@@ -49,46 +48,50 @@ logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 
+with open("config.json") as json_data_file:
+    configs = json.load(json_data_file)
+
 
 class GainType(Enum):
     FIFO = 1
     AVERAGE = 2
 
 
-# TODO: Load this in from config file (but maybe still have as enum)
+# TODO: Load these better
 class TradeColumn(IntEnum):
-    BUY_AMOUNT = 1
-    BUY_CURRENCY = 2
-    BUY_VALUE_BTC = 3
-    BUY_VALUE_GBP = 4
-    SELL_AMOUNT = 5
-    SELL_CURRENCY = 6
-    SELL_VALUE_BTC = 7
-    SELL_VALUE_GBP = 8
-    SPREAD = 9
-    EXCHANGE = 10
-    DATE = 12
+    BUY_AMOUNT = configs["TRADE_CSV_INDICES"]["BUY_AMOUNT"]
+    BUY_CURRENCY = configs["TRADE_CSV_INDICES"]["BUY_CURRENCY"]
+    BUY_VALUE_BTC = configs["TRADE_CSV_INDICES"]["BUY_VALUE_BTC"]
+    BUY_VALUE_GBP = configs["TRADE_CSV_INDICES"]["BUY_VALUE_GBP"]
+    SELL_AMOUNT = configs["TRADE_CSV_INDICES"]["SELL_AMOUNT"]
+    SELL_CURRENCY = configs["TRADE_CSV_INDICES"]["SELL_CURRENCY"]
+    SELL_VALUE_BTC = configs["TRADE_CSV_INDICES"]["SELL_VALUE_BTC"]
+    SELL_VALUE_GBP = configs["TRADE_CSV_INDICES"]["SELL_VALUE_GBP"]
+    SPREAD = configs["TRADE_CSV_INDICES"]["SPREAD"]
+    EXCHANGE = configs["TRADE_CSV_INDICES"]["EXCHANGE"]
+    DATE = configs["TRADE_CSV_INDICES"]["DATE"]
 
 
-# TODO: Load this in from config file (but maybe still have as enum)
+# TODO: Load these better
 class FeeColumn(IntEnum):
-    FEE_AMOUNT = 2
-    FEE_CURRENCY = 3
-    FEE_VALUE_GBP_THEN = 4
-    FEE_VALUE_GBP_NOW = 5
-    TRADE_BUY_AMOUNT = 6
-    TRADE_BUY_CURRENCY = 7
-    TRADE_SELL_AMOUNT = 8
-    TRADE_SELL_CURRENCY = 9
-    EXCHANGE = 10
-    DATE = 11
+    FEE_AMOUNT = configs["FEE_CSV_INDICES"]["FEE_AMOUNT"]
+    FEE_CURRENCY = configs["FEE_CSV_INDICES"]["FEE_CURRENCY"]
+    FEE_VALUE_GBP_THEN = configs["FEE_CSV_INDICES"]["FEE_VALUE_GBP_THEN"]
+    FEE_VALUE_GBP_NOW = configs["FEE_CSV_INDICES"]["FEE_VALUE_GBP_NOW"]
+    TRADE_BUY_AMOUNT = configs["FEE_CSV_INDICES"]["TRADE_BUY_AMOUNT"]
+    TRADE_BUY_CURRENCY = configs["FEE_CSV_INDICES"]["TRADE_BUY_CURRENCY"]
+    TRADE_SELL_AMOUNT = configs["FEE_CSV_INDICES"]["TRADE_SELL_AMOUNT"]
+    TRADE_SELL_CURRENCY = configs["FEE_CSV_INDICES"]["TRADE_SELL_CURRENCY"]
+    EXCHANGE = configs["FEE_CSV_INDICES"]["EXCHANGE"]
+    DATE = configs["FEE_CSV_INDICES"]["DATE"]
 
 
-# TODO: Have all of these be loaded in from config file
-BNB_TIME_DURATION = timedelta(days=30)
-DATE_FORMAT = "%d.%m.%Y %H:%M"
-NATIVE_CURRENCY = "GBP"
-TAX_YEAR = 2020
+BNB_TIME_DURATION = timedelta(days=configs["BNB_TIME_DURATION"])
+DATE_FORMAT = configs["DATE_FORMAT"]
+NATIVE_CURRENCY = configs["NATIVE_CURRENCY"]
+TAX_YEAR = configs["TAX_YEAR"]
+TRADE_CSV = configs["TRADE_CSV"]
+FEE_CSV = configs["FEE_CSV"]
 
 
 class Trade:
@@ -227,10 +230,6 @@ class Gain:
                 self.fee_value_gbp) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
 
 
-def __repr__(self):
-    return str(self)
-
-
 def read_csv_into_trade_list(csv_filename):
     try:
         with open(csv_filename, encoding='utf-8') as csv_file:
@@ -338,7 +337,6 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
     gain_list = []
 
     for trade in trade_list:
-        # TODO: this assumes trades have been updated while doing FIFO
         if trade.buy_currency == asset:
             number_of_shares_in_pool += trade.unaccounted_buy_amount
             pool_of_actual_cost += trade.get_current_cost()
