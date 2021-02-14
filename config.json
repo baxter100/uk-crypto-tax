@@ -3,7 +3,7 @@
   "TAX_YEAR": 2020,
   "NATIVE_CURRENCY": "GBP",
   "TRADE_CSV": "trade-list.csv",
-  "FEE_CSV": "fee-calculation.csv",
+  "FEE_CSV": "fee-list.csv",
 
 
 
@@ -35,10 +35,10 @@
   },
 
   "FEE_CSV_INDICES": {
-    "FEE_AMOUNT" : 2,
-    "FEE_CURRENCY" : 3,
-    "FEE_VALUE_GBP_THEN" : 4,
-    "FEE_VALUE_GBP_NOW" : 5,
+    "FEE_AMOUNT" : 1,
+    "FEE_CURRENCY" : 2,
+    "FEE_VALUE_GBP_THEN" : 3,
+    "FEE_VALUE_GBP_NOW" : 4,
     "TRADE_BUY_AMOUNT" : 6,
     "TRADE_BUY_CURRENCY" : 7,
     "TRADE_SELL_AMOUNT" : 8,
