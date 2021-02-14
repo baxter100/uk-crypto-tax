@@ -29,6 +29,7 @@
 #   * A BnB check with edge cases (29 days, 30 days, 31 days)
 
 # TODO: work out for Gift/Tips
+# TODO: Fix importing with "-" and gifts/tips etc.
 # TODO: work out other currencies
 # TODO: compare methods here with strategy in README and update/note differences
 # TODO: check tax strategy
@@ -182,10 +183,6 @@ class Fee:
                    row[FeeColumn.TRADE_SELL_CURRENCY],
                    row[FeeColumn.DATE],
                    row[FeeColumn.EXCHANGE])
-
-    def __str__(self):
-        return "buy_amount: " + str(self.buy_amount) + " Buy Currency: " + str(self.buy_currency) + " Date : " + str(
-            self.date.strftime("%d.%m.%Y %H:%M"))
 
 
 class Gain:
