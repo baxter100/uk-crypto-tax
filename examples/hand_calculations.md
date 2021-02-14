@@ -36,14 +36,14 @@ Note: there is still 0.01 ETH unaccounted for in this disposal.
 There are no other bnb matches.
 Total gains from same day trades = -£24.8019802
 
-### 404 Holdings
+### 104 Holdings
 
 Next for any unaccounted for disposal we look for the average cost basis from previous corresponding unaccounted for buys.
 
 Trade 4 has 0.01 unaccounted for disposed ETH and trade 5 has 802 unaccounted for disposed USDT.
 
 For trade 4, the avg cost per coin is:
-((417/0.6)x0.1 + (325/0.49) x 0.49)/ 0.1 + 0.49 = 668.6440678
+((417/0.6)x0.1 + (325/0.49) x 0.49)/ (0.1 + 0.49) = 668.6440678
 
 This is from the leftover 0.1 ETH bought in trade 2 and the ETH bought in trade 3.
 

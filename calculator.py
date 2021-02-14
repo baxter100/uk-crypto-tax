@@ -187,7 +187,7 @@ class Fee:
 class Gain:
 
     def __init__(self, gain_type: GainType, disposal_amount, disposal: Trade,
-                 corresponding_buy: Optional[Trade], average_cost=None):
+                 corresponding_buy: Optional[Trade] = None, average_cost=None):
 
         self.gain_type = gain_type
         self.currency = disposal.sell_currency
@@ -195,17 +195,15 @@ class Gain:
         self.disposal_amount_accounted = disposal_amount
 
         self.sold_location = disposal.exchange
-        self.corresponding_buy = None
-        if corresponding_buy:
-            self.corresponding_buy = corresponding_buy
+        self.corresponding_buy = corresponding_buy
+        if corresponding_buy is not None:
             self.cost_basis = corresponding_buy.native_cost_per_coin * self.disposal_amount_accounted
         else:
             self.cost_basis = average_cost * self.disposal_amount_accounted
         self.disposal_trade = disposal
 
-
         # NOTE: profit uses disposal.buy_value_gbp, not disposal.sell_value_gbp
-        self.proceeds = disposal.buy_value_gbp * self.disposal_amount_accounted/disposal.sell_amount
+        self.proceeds = disposal.buy_value_gbp * self.disposal_amount_accounted / disposal.sell_amount
         self.native_currency_gain_value = self.proceeds - self.cost_basis  # gain doesn't account for fees
 
         self.fee_value_gbp = 0
@@ -213,15 +211,24 @@ class Gain:
             self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade
 
     def __str__(self):
-        return f"Type:{self.gain_type} Amount: {self.disposal_amount_accounted} Currency: {self.currency}" + " Date Acquired: " + str(
-            self.corresponding_buy.date.strftime("%d.%m.%Y %H:%M")) + " Date Sold: " + str(
-            self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
-            self.corresponding_buy.exchange) + " Location of sell: " + str(self.sold_location) + " Proceeds in GBP: " + str(
-            self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
-            self.fee_value_gbp) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
+        if self.corresponding_buy is not None:
+            return f"Type:{self.gain_type} Amount: {self.disposal_amount_accounted} Currency: {self.currency}" + " Date Acquired: " + str(
+                self.corresponding_buy.date.strftime("%d.%m.%Y %H:%M")) + " Date Sold: " + str(
+                self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
+                self.corresponding_buy.exchange) + " Location of sell: " + str(
+                self.sold_location) + " Proceeds in GBP: " + str(
+                self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
+                self.fee_value_gbp) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
+        else:
+            return f"Type:{self.gain_type} Amount: {self.disposal_amount_accounted} Currency: {self.currency}" + " Date Acquired: " + " Date Sold: " + str(
+                self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + " Location of sell: " + str(
+                self.sold_location) + " Proceeds in GBP: " + str(
+                self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
+                self.fee_value_gbp) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
 
-    def __repr__(self):
-        return str(self)
+
+def __repr__(self):
+    return str(self)
 
 
 def read_csv_into_trade_list(csv_filename):
@@ -290,7 +297,8 @@ def currency_match(disposal, corresponding_buy):
 def gain_from_pair(disposal, corresponding_buy):
     uncapped_amount = corresponding_buy.unaccounted_buy_amount / disposal.unaccounted_sell_amount
     disposal_amount_accounted_for = min(corresponding_buy.unaccounted_buy_amount, disposal.unaccounted_sell_amount)
-    logger.debug(f"Matched {disposal_amount_accounted_for * 100/disposal.unaccounted_sell_amount}% of \n\t{disposal} with \n\t{corresponding_buy}.")
+    logger.debug(
+        f"Matched {disposal_amount_accounted_for * 100 / disposal.unaccounted_sell_amount}% of \n\t{disposal} with \n\t{corresponding_buy}.")
     gain = Gain(GainType.FIFO, disposal_amount_accounted_for, disposal, corresponding_buy)
     print(gain)
     disposal.unaccounted_sell_amount -= disposal_amount_accounted_for
@@ -332,27 +340,27 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
     for trade in trade_list:
         # TODO: this assumes trades have been updated while doing FIFO
         if trade.buy_currency == asset:
-            number_of_shares_in_pool += trade.buy_amount
+            number_of_shares_in_pool += trade.unaccounted_buy_amount
             pool_of_actual_cost += trade.get_current_cost()
             trade.unaccounted_buy_amount = 0
 
-        if trade.sell_currency == asset:
-
+        if trade.sell_currency == asset and trade.is_viable_sell():
+            print(trade)
             number_of_shares_to_sell = trade.unaccounted_sell_amount
             unaccounted_for_amount = 0
             if number_of_shares_to_sell > number_of_shares_in_pool:
                 unaccounted_for_amount = number_of_shares_to_sell - number_of_shares_in_pool
                 number_of_shares_to_sell = number_of_shares_in_pool
+            print(pool_of_actual_cost)
+            print(number_of_shares_in_pool)
+            average_cost = pool_of_actual_cost / number_of_shares_in_pool
 
-            cost = (pool_of_actual_cost * number_of_shares_to_sell) / number_of_shares_in_pool
-            proceeds = trade.buy_value_gbp * (
-                    number_of_shares_to_sell / trade.sell_amount)  # Note this doesn't use get_current_disposal_value as number_shares_to_sell may not equal unaccounted sell amount
-            gain = Gain(GainType.AVERAGE, number_of_shares_to_sell, proceeds, cost, trade)
-
+            gain = Gain(GainType.AVERAGE, number_of_shares_to_sell, trade, average_cost=average_cost)
+            print(gain)
             gain_list.append(gain)
             # then update holding
             number_of_shares_in_pool -= number_of_shares_to_sell
-            pool_of_actual_cost -= cost
+            pool_of_actual_cost -= gain.cost_basis
 
             trade.unaccounted_sell_amount = unaccounted_for_amount
 
