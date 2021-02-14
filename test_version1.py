@@ -6,9 +6,6 @@ sample_csv = "examples/sample-trade-list.csv"
 
 # check that things that should be floats are float and strings are strings
 
-def bnb_match(disposal, corresponding_buy):
-    return disposal.date.date() < corresponding_buy.date.date() <= (disposal.date + BNB_TIME_DURATION).date()
-
 
 # TODO: Test fees
 
@@ -39,31 +36,31 @@ class Test(unittest.TestCase):
         buy1 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, disposal_date,
                      "exchange")
 
-        self.assertFalse(bnb_match(disposal, buy1))
+        self.assertFalse(bnb_condition(disposal, buy1))
 
         buy2_date = datetime.strptime("15.04.2021 18:13", DATE_FORMAT)
         buy2 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy2_date,
                      "exchange")
 
-        self.assertFalse(bnb_match(disposal, buy2))
+        self.assertFalse(bnb_condition(disposal, buy2))
 
         buy3_date = datetime.strptime("15.04.2021 00:00", DATE_FORMAT)
         buy3 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy3_date,
                      "exchange")
 
-        self.assertFalse(bnb_match(disposal, buy3))
+        self.assertFalse(bnb_condition(disposal, buy3))
 
         buy4_date = datetime.strptime("16.04.2021 18:13", DATE_FORMAT)
         buy4 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy4_date,
                      "exchange")
 
-        self.assertFalse(bnb_match(disposal, buy4))
+        self.assertFalse(bnb_condition(disposal, buy4))
 
         buy5_date = datetime.strptime("14.04.2021 19:13", DATE_FORMAT)
         buy5 = Trade(0.1, "BTC", 0.1, 0.1, "ETH", 0.1, buy5_date,
                      "exchange")
 
-        self.assertTrue(bnb_match(disposal, buy5))
+        self.assertTrue(bnb_condition(disposal, buy5))
 
     def test_gains(self):
         day_gains = 52.5

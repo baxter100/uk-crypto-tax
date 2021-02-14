@@ -90,6 +90,7 @@ BNB_TIME_DURATION = timedelta(days=configs["BNB_TIME_DURATION"])
 DATE_FORMAT = configs["DATE_FORMAT"]
 NATIVE_CURRENCY = configs["NATIVE_CURRENCY"]
 TAX_YEAR = configs["TAX_YEAR"]
+UNTAXABLE_ALLOWANCE = configs["ANNUAL_UNTAXABLE_ALLOWANCE"][str(TAX_YEAR)]
 TRADE_CSV = configs["TRADE_CSV"]
 FEE_CSV = configs["FEE_CSV"]
 
@@ -299,7 +300,6 @@ def gain_from_pair(disposal, corresponding_buy):
     logger.debug(
         f"Matched {disposal_amount_accounted_for * 100 / disposal.unaccounted_sell_amount}% of \n\t{disposal} with \n\t{corresponding_buy}.")
     gain = Gain(GainType.FIFO, disposal_amount_accounted_for, disposal, corresponding_buy)
-    print(gain)
     disposal.unaccounted_sell_amount -= disposal_amount_accounted_for
     corresponding_buy.unaccounted_buy_amount -= disposal_amount_accounted_for
     return gain
@@ -311,10 +311,12 @@ def calculate_day_gains_fifo(trade_list):
     return calculate_fifo_gains(trade_list, condition)
 
 
+def bnb_condition(disposal, corresponding_buy):
+    return disposal.date.date() < corresponding_buy.date.date() <= (disposal.date + BNB_TIME_DURATION).date()
+
+
 def calculate_bnb_gains_fifo(trade_list):
-    condition = lambda disposal, corresponding_buy: \
-        disposal.date.date() < corresponding_buy.date.date() <= (disposal.date + BNB_TIME_DURATION).date()
-    return calculate_fifo_gains(trade_list, condition)
+    return calculate_fifo_gains(trade_list, bnb_condition)
 
 
 def calculate_fifo_gains(trade_list, trade_within_date_range):
@@ -343,18 +345,16 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
             trade.unaccounted_buy_amount = 0
 
         if trade.sell_currency == asset and trade.is_viable_sell():
-            print(trade)
+
             number_of_shares_to_sell = trade.unaccounted_sell_amount
             unaccounted_for_amount = 0
             if number_of_shares_to_sell > number_of_shares_in_pool:
                 unaccounted_for_amount = number_of_shares_to_sell - number_of_shares_in_pool
                 number_of_shares_to_sell = number_of_shares_in_pool
-            print(pool_of_actual_cost)
-            print(number_of_shares_in_pool)
+
             average_cost = pool_of_actual_cost / number_of_shares_in_pool
 
             gain = Gain(GainType.AVERAGE, number_of_shares_to_sell, trade, average_cost=average_cost)
-            print(gain)
             gain_list.append(gain)
             # then update holding
             number_of_shares_in_pool -= number_of_shares_to_sell
@@ -405,11 +405,17 @@ def output_to_html(results, html_filename):
 
 
 def main():
-    trades = read_csv_into_trade_list("examples/sample-trade-list.csv")
-    fees = read_csv_into_fee_list("examples/sample-fee-list.csv")
+    trades = read_csv_into_trade_list(TRADE_CSV)
+    fees = read_csv_into_fee_list(FEE_CSV)
     assign_fees_to_trades(trades, fees)
     capital_gains = calculate_capital_gain(trades)
     relavant_capital_gains = [g for g in capital_gains if within_tax_year(g.disposal_trade, TAX_YEAR)]
+    year_gains_sum = sum(
+        [g.native_currency_gain_value for g in capital_gains if within_tax_year(g.disposal_trade, TAX_YEAR)])
+    taxable_gain = max(0, year_gains_sum - UNTAXABLE_ALLOWANCE)
+
+    print(f"Total gain for tax year {TAX_YEAR}: {year_gains_sum}.")
+    print(f"Total taxable gain for tax year: {TAX_YEAR} -  {UNTAXABLE_ALLOWANCE} = {taxable_gain}.")
     output_to_html(capital_gains, "tax-report.html")
 
 
