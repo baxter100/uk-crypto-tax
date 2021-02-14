@@ -134,7 +134,10 @@ class Trade:
                      row[TradeColumn.EXCHANGE])
 
     def get_current_cost(self):
-        portion = self.unaccounted_buy_amount / self.buy_amount
+        if self.buy_amount == 0:
+            portion = 1
+        else:
+            portion = self.unaccounted_buy_amount / self.buy_amount
         if self.fee is not None:
             raw_cost = self.sell_value_gbp + self.fee.fee_value_gbp_at_trade
         else:
@@ -345,6 +348,8 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
     # 104 holdings is calculated for each non-fiat asset.
     gain_list = []
 
+
+
     for trade in trade_list:
         if trade.buy_currency == asset:
             number_of_shares_in_pool += trade.unaccounted_buy_amount
@@ -386,6 +391,7 @@ def calculate_104_holding_gains(trade_list: List[Trade]):
 
     gains = []
     for asset in non_native_asset_list:
+        print(asset)
         gains.extend(calculate_104_gains_for_asset(asset, trade_list))
 
     return gains
