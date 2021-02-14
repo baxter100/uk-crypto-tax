@@ -121,6 +121,9 @@ class Trade:
 
     @staticmethod
     def from_csv(row):
+        for ind, val in enumerate(row):
+            if val == "-":
+                row[ind] = 0
         return Trade(float(row[TradeColumn.BUY_AMOUNT]),
                      row[TradeColumn.BUY_CURRENCY],
                      float(row[TradeColumn.BUY_VALUE_GBP]),
@@ -170,9 +173,13 @@ class Fee:
         self.trade_sell_currency = trade_sell_currency
         self.date = date
         self.exchange = exchange
-
+        print(self)
     @staticmethod
     def from_csv(row):
+        for ind, val in enumerate(row):
+            if val == "-" or " ":
+                row[ind] = 0
+
         return Fee(float(row[FeeColumn.FEE_AMOUNT]),
                    row[FeeColumn.FEE_CURRENCY],
                    float(row[FeeColumn.FEE_VALUE_GBP_THEN]),
@@ -183,6 +190,9 @@ class Fee:
                    row[FeeColumn.TRADE_SELL_CURRENCY],
                    row[FeeColumn.DATE],
                    row[FeeColumn.EXCHANGE])
+
+    def __repr__(self):
+        return f"<Fee {self.date} :: {self.fee_amount} {self.fee_currency}"
 
 
 class Gain:
