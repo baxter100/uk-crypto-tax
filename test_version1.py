@@ -10,6 +10,8 @@ def bnb_match(disposal, corresponding_buy):
     return disposal.date.date() < corresponding_buy.date.date() <= (disposal.date + BNB_TIME_DURATION).date()
 
 
+# TODO: Test fees
+
 class Test(unittest.TestCase):
     def test_csv_loading(self):
         trade_list = read_csv_into_trade_list(sample_csv)
@@ -75,22 +77,24 @@ class Test(unittest.TestCase):
         calculated_day = calculate_day_gains_fifo(trade_list)
         relevant_day_gains = sum(
             [g.native_currency_gain_value for g in calculated_day if within_tax_year(g.disposal_trade, tax_year)])
-        
-        self.assertAlmostEqual(day_gains, relevant_day_gains,4)
+
+        self.assertAlmostEqual(day_gains, relevant_day_gains, 4)
         calculated_bnb = calculate_bnb_gains_fifo(trade_list)
         relevant_bnb_gains = sum(
             [g.native_currency_gain_value for g in calculated_bnb if within_tax_year(g.disposal_trade, tax_year)])
-        self.assertAlmostEqual(bnb_gains, relevant_bnb_gains,4)
+        self.assertAlmostEqual(bnb_gains, relevant_bnb_gains, 4)
         calculated_avg = calculate_104_holding_gains(trade_list)
         relevant_104_gains = sum(
             [g.native_currency_gain_value for g in calculated_avg if within_tax_year(g.disposal_trade, tax_year)])
 
-        # calculated_total = calculate_capital_gain(trade_list)
+        self.assertAlmostEqual(avg_gains, relevant_104_gains, 4)
 
+        trade_list = read_csv_into_trade_list(sample_csv)
+        capital_gains = calculate_capital_gain(trade_list)
+        relevant_capital_gains_sum = sum(
+            [g.native_currency_gain_value for g in capital_gains if within_tax_year(g.disposal_trade, tax_year)])
 
-
-        self.assertAlmostEqual(avg_gains, relevant_104_gains,4)
-        # self.assertEqual(total_gains,calculated_total)
+        self.assertAlmostEqual(total_gains, relevant_capital_gains_sum, 4)
 
 
 if __name__ == '__main__':
