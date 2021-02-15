@@ -54,8 +54,9 @@ with open("config.json") as json_data_file:
 
 
 class GainType(Enum):
-    FIFO = 1
-    AVERAGE = 2
+    DAY_FIFO = 1
+    BNB_FIFO = 2
+    AVERAGE = 3
 
 
 # TODO: Load these better
@@ -308,12 +309,12 @@ def currency_match(disposal, corresponding_buy):
     return disposal.sell_currency == corresponding_buy.buy_currency
 
 
-def gain_from_pair(disposal, corresponding_buy):
+def gain_from_pair(disposal, corresponding_buy,gain_type):
     uncapped_amount = corresponding_buy.unaccounted_buy_amount / disposal.unaccounted_sell_amount
     disposal_amount_accounted_for = min(corresponding_buy.unaccounted_buy_amount, disposal.unaccounted_sell_amount)
     logger.debug(
         f"Matched {disposal_amount_accounted_for * 100 / disposal.unaccounted_sell_amount}% of \n\t{disposal} with \n\t{corresponding_buy}.")
-    gain = Gain(GainType.FIFO, disposal_amount_accounted_for, disposal, corresponding_buy)
+    gain = Gain(gain_type, disposal_amount_accounted_for, disposal, corresponding_buy)
     disposal.unaccounted_sell_amount -= disposal_amount_accounted_for
     corresponding_buy.unaccounted_buy_amount -= disposal_amount_accounted_for
     return gain
@@ -322,7 +323,7 @@ def gain_from_pair(disposal, corresponding_buy):
 def calculate_day_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         disposal.date.date() == corresponding_buy.date.date()
-    return calculate_fifo_gains(trade_list, condition)
+    return calculate_fifo_gains(trade_list, condition,GainType.DAY_FIFO)
 
 
 def bnb_condition(disposal, corresponding_buy):
@@ -330,10 +331,10 @@ def bnb_condition(disposal, corresponding_buy):
 
 
 def calculate_bnb_gains_fifo(trade_list):
-    return calculate_fifo_gains(trade_list, bnb_condition)
+    return calculate_fifo_gains(trade_list, bnb_condition,GainType.BNB_FIFO)
 
 
-def calculate_fifo_gains(trade_list, trade_within_date_range):
+def calculate_fifo_gains(trade_list, trade_within_date_range, gain_type):
     gains = []
     for disposal in trade_list:
         if disposal.is_viable_sell():
@@ -341,7 +342,7 @@ def calculate_fifo_gains(trade_list, trade_within_date_range):
                 if currency_match(disposal,
                                   corresponding_buy) and corresponding_buy.unaccounted_buy_amount > 0 and trade_within_date_range(
                     disposal, corresponding_buy) and disposal.is_viable_sell():
-                    calculated_gain = gain_from_pair(disposal, corresponding_buy)
+                    calculated_gain = gain_from_pair(disposal, corresponding_buy, gain_type)
                     gains.append(calculated_gain)
     return gains
 
@@ -417,10 +418,18 @@ def calculate_capital_gain(trade_list: List[Trade]):
     return gains
 
 
-def output_to_html(results, html_filename):
+def output_to_html(gains, template_file, html_output_filename):
     html_text = "<!DOCTYPE html>"
     # TODO: Have format of this file in config file, and pass values to that formatting string.
-    # TODO: Create output html file
+    # TODO: Create output html file. Read template and reformat.
+
+    fin = open(template_file)
+    contents = fin.read()
+
+    fin.close()
+    out = contents.format(TAX_YEAR_START = TAX_YEAR-1,TAX_YEAR_END=TAX_YEAR, NATIVE_CURRENCY=NATIVE_CURRENCY, INPUT_TRADE_CSV=TRADE_CSV, TRADE_WARNING="",
+                    NUMBER_OF_DISPOSALS="")
+    print(out)
 
 
 def main():
@@ -435,7 +444,7 @@ def main():
 
     print(f"Total gain for tax year {TAX_YEAR}: {year_gains_sum}.")
     print(f"Total taxable gain for tax year {TAX_YEAR}: {year_gains_sum}  -  {UNTAXABLE_ALLOWANCE} = {taxable_gain}.")
-    output_to_html(capital_gains, "tax-report.html")
+    output_to_html(capital_gains, "output_template.html", "tax-report.html")
 
 
 if __name__ == "__main__":
