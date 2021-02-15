@@ -60,6 +60,7 @@ class GainType(Enum):
 
 # TODO: Load these better
 class TradeColumn(IntEnum):
+    TRADE_TYPE = configs["TRADE_CSV_INDICES"]["TRADE_TYPE"]
     BUY_AMOUNT = configs["TRADE_CSV_INDICES"]["BUY_AMOUNT"]
     BUY_CURRENCY = configs["TRADE_CSV_INDICES"]["BUY_CURRENCY"]
     BUY_VALUE_BTC = configs["TRADE_CSV_INDICES"]["BUY_VALUE_BTC"]
@@ -89,6 +90,7 @@ class FeeColumn(IntEnum):
 
 BNB_TIME_DURATION = timedelta(days=configs["BNB_TIME_DURATION"])
 DATE_FORMAT = configs["DATE_FORMAT"]
+TRADE_TYPES_TO_IMPORT = configs["TRADE_TYPES_TO_IMPORT"]
 NATIVE_CURRENCY = configs["NATIVE_CURRENCY"]
 TAX_YEAR = configs["TAX_YEAR"]
 UNTAXABLE_ALLOWANCE = configs["ANNUAL_UNTAXABLE_ALLOWANCE"][str(TAX_YEAR)]
@@ -121,17 +123,19 @@ class Trade:
 
     @staticmethod
     def from_csv(row):
-        for ind, val in enumerate(row):
-            if val == "-":
-                row[ind] = 0
-        return Trade(float(row[TradeColumn.BUY_AMOUNT]),
-                     row[TradeColumn.BUY_CURRENCY],
-                     float(row[TradeColumn.BUY_VALUE_GBP]),
-                     float(row[TradeColumn.SELL_AMOUNT]),
-                     row[TradeColumn.SELL_CURRENCY],
-                     float(row[TradeColumn.SELL_VALUE_GBP]),
-                     datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
-                     row[TradeColumn.EXCHANGE])
+        if row[TradeColumn.TRADE_TYPE] in TRADE_TYPES_TO_IMPORT:
+
+            for ind, val in enumerate(row):
+                if val == "-":
+                    row[ind] = 0
+            return Trade(float(row[TradeColumn.BUY_AMOUNT]),
+                         row[TradeColumn.BUY_CURRENCY],
+                         float(row[TradeColumn.BUY_VALUE_GBP]),
+                         float(row[TradeColumn.SELL_AMOUNT]),
+                         row[TradeColumn.SELL_CURRENCY],
+                         float(row[TradeColumn.SELL_VALUE_GBP]),
+                         datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
+                         row[TradeColumn.EXCHANGE])
 
     def get_current_cost(self):
         if self.buy_amount == 0:

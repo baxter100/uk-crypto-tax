@@ -20,7 +20,9 @@
 
 
   "DATE_FORMAT": "%d.%m.%Y %H:%M",
+  "TRADE_TYPES_TO_IMPORT": ["Gift/Tip", "Trade"],
   "TRADE_CSV_INDICES": {
+    "TRADE_TYPE": 0,
     "BUY_AMOUNT" : 1,
     "BUY_CURRENCY" : 2,
     "BUY_VALUE_BTC" : 3,
