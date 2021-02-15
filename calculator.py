@@ -228,19 +228,21 @@ class Gain:
         self.fee_value_gbp = 0
         if disposal.fee:
             self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade
+    def html_format(self):
+        pass
 
     def __str__(self):
         if self.corresponding_buy is not None:
             return f"Type:{self.gain_type} Amount: {self.disposal_amount_accounted} Currency: {self.currency}" + " Date Acquired: " + str(
-                self.corresponding_buy.date.strftime("%d.%m.%Y %H:%M")) + " Date Sold: " + str(
-                self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + str(
+                self.corresponding_buy.date.strftime(DATE_FORMAT)) + " Date Sold: " + str(
+                self.date_sold.strftime(DATE_FORMAT)) + " Location of buy: " + str(
                 self.corresponding_buy.exchange) + " Location of sell: " + str(
                 self.sold_location) + " Proceeds in GBP: " + str(
                 self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
                 self.fee_value_gbp) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
         else:
             return f"Type:{self.gain_type} Amount: {self.disposal_amount_accounted} Currency: {self.currency}" + " Date Acquired: " + " Date Sold: " + str(
-                self.date_sold.strftime("%d.%m.%Y %H:%M")) + " Location of buy: " + " Location of sell: " + str(
+                self.date_sold.strftime(DATE_FORMAT)) + " Location of buy: " + " Location of sell: " + str(
                 self.sold_location) + " Proceeds in GBP: " + str(
                 self.proceeds) + " Cost Basis in GBP: " + str(self.cost_basis) + " Fee in GBP: " + str(
                 self.fee_value_gbp) + " Gain/Loss in GBP: " + str(self.native_currency_gain_value)
@@ -309,7 +311,7 @@ def currency_match(disposal, corresponding_buy):
     return disposal.sell_currency == corresponding_buy.buy_currency
 
 
-def gain_from_pair(disposal, corresponding_buy,gain_type):
+def gain_from_pair(disposal, corresponding_buy, gain_type):
     uncapped_amount = corresponding_buy.unaccounted_buy_amount / disposal.unaccounted_sell_amount
     disposal_amount_accounted_for = min(corresponding_buy.unaccounted_buy_amount, disposal.unaccounted_sell_amount)
     logger.debug(
@@ -323,7 +325,7 @@ def gain_from_pair(disposal, corresponding_buy,gain_type):
 def calculate_day_gains_fifo(trade_list):
     condition = lambda disposal, corresponding_buy: \
         disposal.date.date() == corresponding_buy.date.date()
-    return calculate_fifo_gains(trade_list, condition,GainType.DAY_FIFO)
+    return calculate_fifo_gains(trade_list, condition, GainType.DAY_FIFO)
 
 
 def bnb_condition(disposal, corresponding_buy):
@@ -331,7 +333,7 @@ def bnb_condition(disposal, corresponding_buy):
 
 
 def calculate_bnb_gains_fifo(trade_list):
-    return calculate_fifo_gains(trade_list, bnb_condition,GainType.BNB_FIFO)
+    return calculate_fifo_gains(trade_list, bnb_condition, GainType.BNB_FIFO)
 
 
 def calculate_fifo_gains(trade_list, trade_within_date_range, gain_type):
@@ -419,32 +421,48 @@ def calculate_capital_gain(trade_list: List[Trade]):
 
 
 def output_to_html(gains, template_file, html_output_filename):
-    html_text = "<!DOCTYPE html>"
     # TODO: Have format of this file in config file, and pass values to that formatting string.
     # TODO: Create output html file. Read template and reformat.
+
+    relevant_capital_gains = [g for g in gains if within_tax_year(g.disposal_trade, TAX_YEAR)]
+    relevant_capital_gains.sort(key=lambda g: g.date)
+    relevant_trades = []
+    [relevant_trades.append(g.disposal_trade) for g in gains if within_tax_year(g.disposal_trade,
+                                                                                TAX_YEAR) and g.disposal_trade not in relevant_trades]
+
+    day_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.DAY_FIFO]
+    bnb_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.BNB_FIFO]
+    avg_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.AVERAGE]
+
+    year_gains_sum = sum([g.native_currency_gain_value for g in relevant_capital_gains])
+
+    taxable_gain = max(0, year_gains_sum - UNTAXABLE_ALLOWANCE)
+
+    print(f"Total gain for tax year {TAX_YEAR}: {year_gains_sum}.")
+    print(f"Total taxable gain for tax year {TAX_YEAR}: {year_gains_sum}  -  {UNTAXABLE_ALLOWANCE} = {taxable_gain}.")
 
     fin = open(template_file)
     contents = fin.read()
 
     fin.close()
-    out = contents.format(TAX_YEAR_START = TAX_YEAR-1,TAX_YEAR_END=TAX_YEAR, NATIVE_CURRENCY=NATIVE_CURRENCY, INPUT_TRADE_CSV=TRADE_CSV, TRADE_WARNING="",
-                    NUMBER_OF_DISPOSALS="")
+
+    GAINS = []
+    for gain in relevant_capital_gains:
+        GAINS.append(gain.html_format())
+    out = contents.format(TAX_YEAR_START=TAX_YEAR - 1, TAX_YEAR_END=TAX_YEAR, NATIVE_CURRENCY=NATIVE_CURRENCY,
+                          INPUT_TRADE_CSV=TRADE_CSV, NUMBER_OF_DISPOSALS=len(relevant_trades),GAINS_HEADING="", GAINS=GAINS)
     print(out)
+
+
 
 
 def main():
     trades = read_csv_into_trade_list(TRADE_CSV)
     fees = read_csv_into_fee_list(FEE_CSV)
     assign_fees_to_trades(trades, fees)
-    capital_gains = calculate_capital_gain(trades)
-    relavant_capital_gains = [g for g in capital_gains if within_tax_year(g.disposal_trade, TAX_YEAR)]
-    year_gains_sum = sum(
-        [g.native_currency_gain_value for g in capital_gains if within_tax_year(g.disposal_trade, TAX_YEAR)])
-    taxable_gain = max(0, year_gains_sum - UNTAXABLE_ALLOWANCE)
+    total_gains = calculate_capital_gain(trades)
 
-    print(f"Total gain for tax year {TAX_YEAR}: {year_gains_sum}.")
-    print(f"Total taxable gain for tax year {TAX_YEAR}: {year_gains_sum}  -  {UNTAXABLE_ALLOWANCE} = {taxable_gain}.")
-    output_to_html(capital_gains, "output_template.html", "tax-report.html")
+    output_to_html(total_gains, "output_template.html", "tax-report.html")
 
 
 if __name__ == "__main__":
