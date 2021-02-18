@@ -2,7 +2,7 @@ import unittest
 from calculator import *
 
 sample_csv = "examples/sample-trade-list.csv"
-
+sample_fee_csv = "examples/sample-fee-list.csv"
 
 # check that things that should be floats are float and strings are strings
 
@@ -10,10 +10,9 @@ sample_csv = "examples/sample-trade-list.csv"
 # TODO: Test fees
 
 class Test(unittest.TestCase):
-    def test_csv_loading(self):
+    def test_trade_csv_loading(self):
         trade_list = read_csv_into_trade_list(sample_csv)
 
-        self.assertIsInstance(trade_list[0], Trade)
         self.assertIsInstance(trade_list[0], Trade)
 
         trade_one = trade_list[1]
@@ -27,6 +26,14 @@ class Test(unittest.TestCase):
             for y in range(0, len(trade_list)):
                 if x < y:
                     self.assertLess(trade_list[x].date, trade_list[y].date)
+
+    def test_fee_csv_loading(self):
+        fee_list = read_csv_into_fee_list(sample_fee_csv)
+        self.assertIsInstance(fee_list[0], Fee)
+        fee_one = fee_list[0]
+        self.assertEqual(fee_one.fee_amount, 0.1)
+        self.assertEqual(fee_one.fee_currency, "BTC")
+        self.assertEqual(fee_one.fee_value_gbp_at_trade, 0.1)
 
     def test_matching_edge_cases(self):
         disposal_date = datetime.strptime("15.03.2021 18:13", DATE_FORMAT)

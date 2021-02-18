@@ -184,8 +184,10 @@ class Fee:
 
     @staticmethod
     def from_csv(row):
+
         for ind, val in enumerate(row):
-            if val == "-" or " ":
+            if val == "-" or val == " ":
+
                 row[ind] = 0
 
         return Fee(float(row[FeeColumn.FEE_AMOUNT]),
@@ -270,7 +272,9 @@ def read_csv_into_fee_list(csv_filename):
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             next(reader)  # Ignore header row
+
             fees = [Fee.from_csv(row) for row in list(reader)]
+            fees.sort(key=lambda fee: fee.date)
             logger.debug(f"Loaded {len(fees)} fees from {csv_filename}.")
             return fees
     except FileNotFoundError as e:
