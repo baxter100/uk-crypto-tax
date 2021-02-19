@@ -45,7 +45,7 @@ from enum import IntEnum, Enum
 from typing import List, Optional
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 
 # TODO: Have config option of logging location
 handler = logging.StreamHandler(sys.stdout)
@@ -60,6 +60,7 @@ class GainType(Enum):
     BNB_FIFO = 2
     AVERAGE = 3
     FUTURE_FIFO = 4
+    UNACCOUNTED = 5
 
 
 # TODO: Load these better
@@ -141,7 +142,7 @@ class Trade:
                      float(row[TradeColumn.SELL_AMOUNT]),
                      row[TradeColumn.SELL_CURRENCY],
                      float(row[TradeColumn.SELL_VALUE_GBP]),
-                     datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
+                     datetime.strptime(row[TradeColumn.DATE],DATE_FORMAT),
                      row[TradeColumn.EXCHANGE])
 
     def account_for_fee_in_cost(self):
@@ -222,6 +223,14 @@ class Fee:
 
 
 class Gain:
+    heading = "<th>Gain Type</th>" \
+              "<th>Amount</th>" \
+              "<th>Currency</th>" \
+              "<th>Date Acquired</th>" \
+              "<th>Date Sold</th>" \
+              "<th>Proceeds</th>" \
+              "<th>Cost basis</th>" \
+              "<th>Gain Loss</th>"
 
     def __init__(self, gain_type: GainType, disposal_amount, disposal: Trade,
                  corresponding_buy: Optional[Trade] = None, average_cost=None):
@@ -235,8 +244,11 @@ class Gain:
         self.corresponding_buy = corresponding_buy
         if corresponding_buy is not None:
             self.cost_basis = corresponding_buy.native_cost_per_coin * self.disposal_amount_accounted
-        else:
+        elif average_cost is not None:
             self.cost_basis = average_cost * self.disposal_amount_accounted
+
+        elif self.gain_type == GainType.UNACCOUNTED:
+            self.cost_basis = 0
         self.disposal_trade = disposal
 
         proportion_accounted_for = self.disposal_amount_accounted / disposal.sell_amount
@@ -253,7 +265,28 @@ class Gain:
             self.native_currency_gain_value -= self.fee_value_gbp
 
     def html_format(self):
-        pass
+
+        corresponding_buy_date = ""
+        if self.corresponding_buy is not None:
+            corresponding_buy_date = self.corresponding_buy.date.strftime(DATE_FORMAT)
+
+        disposal_date = self.date_sold.strftime(DATE_FORMAT)
+        proceeds = round(self.proceeds,2)
+        cost_basis = round(self.cost_basis,2)
+        native_currency_gain_value = round(self.native_currency_gain_value,2)
+        gain_type = ""
+        if self.gain_type == GainType.DAY_FIFO:
+            gain_type = "Same Day"
+        if self.gain_type == GainType.BNB_FIFO:
+            gain_type = "BNB Day"
+        if self.gain_type == GainType.AVERAGE:
+            gain_type = "104"
+        if self.gain_type == GainType.FUTURE_FIFO:
+            gain_type = "FIFO (future)"
+        if self.gain_type == GainType.UNACCOUNTED:
+            gain_type = "Unaccounted"
+        return f"<tr><td>{gain_type}</td> <td>{self.disposal_amount_accounted}</td> <td>{self.currency}</td> <td>{corresponding_buy_date}</td>  <td>{disposal_date}</td> <td>{proceeds}</td> <td> {cost_basis}</td> <td>{native_currency_gain_value}</td></tr>"
+
 
     def __str__(self):
         if self.corresponding_buy is not None:
@@ -310,6 +343,9 @@ def read_csv_into_fee_list(csv_filename):
                 fee = fees[i]
                 [logger.warning(f"FEE Warning - Possible Duplicates:{fee} and {fee2}.") for fee2 in fees if
                  fee.is_possible_duplicate(fee2) and fees.index(fee2) != i]
+
+            [logger.warning(f"Unusual large fee amount of {fee.fee_value_gbp_at_trade} in fee: {fee}") for fee in fees
+             if fee.fee_value_gbp_at_trade > 99]
 
             return fees
     except FileNotFoundError as e:
@@ -380,7 +416,6 @@ def calculate_bnb_gains_fifo(trade_list):
 
 
 def calculate_future_gains_fifo(trade_list):
-
     condition = lambda disposal, corresponding_buy: \
         disposal.date.date() < corresponding_buy.date.date()
     return calculate_fifo_gains(trade_list, condition, GainType.FUTURE_FIFO)
@@ -430,10 +465,6 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
 
                 trade.unaccounted_sell_amount = unaccounted_for_amount
 
-
-
-
-
     return gain_list
 
 
@@ -450,31 +481,34 @@ def calculate_104_holding_gains(trade_list: List[Trade]):
     return gains
 
 
+def calculate_unaccounted_disposal_gains(trade_list: List[Trade]):
+    gains = []
+    for trade in trade_list:
+        if trade.sell_currency != NATIVE_CURRENCY and trade.unaccounted_sell_amount != 0:
+            logger.warning(
+                f"Trade: {trade} has unaccounted disposal of {trade.unaccounted_sell_amount} {trade.sell_currency}  which will be given cost basis 0")
+            g = Gain(GainType.UNACCOUNTED, trade.unaccounted_sell_amount, trade)
+            gains.append(g)
+
+    return gains
+
+
 def calculate_capital_gain(trade_list: List[Trade]):
     gains = []
     gains.extend(calculate_day_gains_fifo(trade_list))
     gains.extend(calculate_bnb_gains_fifo(trade_list))
     gains.extend(calculate_104_holding_gains(trade_list))
 
-
     # Where disposal is not fully accounted for, need to do FIFO on later trades(after all 104 holdings have been done)
     #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
 
     gains.extend(calculate_future_gains_fifo(trade_list))
-
-    for trade in trade_list:
-        if trade.sell_currency != NATIVE_CURRENCY and trade.unaccounted_sell_amount != 0:
-            logger.warning(f"Trade: {trade} has unaccounted for disposal of {trade.unaccounted_sell_amount} {trade.sell_currency} ")
-            logger.warning("These trade will be processed with cost basis 0")
-
-
+    gains.extend(calculate_unaccounted_disposal_gains(trade_list))
 
     return gains
 
 
 def output_to_html(gains: List[Gain], template_file, html_output_filename):
-    # TODO: Have format of this file in config file, and pass values to that formatting string.
-    # TODO: Create output html file. Read template and reformat.
 
     relevant_capital_gains = [g for g in gains if within_tax_year(g.disposal_trade, TAX_YEAR)]
     relevant_capital_gains.sort(key=lambda g: g.date_sold)
@@ -488,6 +522,10 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     BNB_GAINS = sum([g.native_currency_gain_value for g in bnb_gains])
     avg_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.AVERAGE]
     AVG_GAINS = sum([g.native_currency_gain_value for g in avg_gains])
+    future_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.FUTURE_FIFO]
+    FUTURE_GAINS = sum([g.native_currency_gain_value for g in future_gains])
+    unaccounted_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.UNACCOUNTED]
+    UNACCOUNTED_GAINS = sum([g.native_currency_gain_value for g in unaccounted_gains])
 
     TOTAL_PROCEEDS = sum([g.proceeds for g in relevant_capital_gains])
     TOTAL_COSTS = sum([g.cost_basis for g in relevant_capital_gains])
@@ -506,9 +544,10 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
 
     fin.close()
 
-    GAINS = []
+    GAINS = ""
     for gain in relevant_capital_gains:
-        GAINS.append(gain.html_format())
+        GAINS += (gain.html_format())
+
     out = contents.format(TAX_YEAR_START=TAX_YEAR - 1,
                           TAX_YEAR_END=TAX_YEAR,
                           NATIVE_CURRENCY=NATIVE_CURRENCY,
@@ -517,6 +556,8 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
                           DAY_GAINS=DAY_GAINS,
                           BNB_GAINS=BNB_GAINS,
                           AVG_GAINS=AVG_GAINS,
+                          FUTURE_GAINS=FUTURE_GAINS,
+                          UNACCOUNTED_GAINS=UNACCOUNTED_GAINS,
                           DISPOSAL_FEE_VALUE=DISPOSAL_FEE_VALUE,
                           TOTAL_PROCEEDS=TOTAL_PROCEEDS,
                           TOTAL_COSTS=TOTAL_COSTS,
@@ -524,16 +565,17 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
                           TOTAL_GAINS=TOTAL_GAINS,
                           TOTAL_TAXABLE_GAINS=TOTAL_TAXABLE_GAINS,
 
-                          GAINS_HEADING="",
+                          GAINS_HEADING=Gain.heading,
                           GAINS=GAINS)
-
     print(out)
+    file = open(html_output_filename, "w+")
+    file.write(out)
 
 
 def main():
     trades = read_csv_into_trade_list(TRADE_CSV)
-    # fees = read_csv_into_fee_list(FEE_CSV)
-    # assign_fees_to_trades(trades, fees)
+    fees = read_csv_into_fee_list(FEE_CSV)
+    assign_fees_to_trades(trades, fees)
     total_gains = calculate_capital_gain(trades)
 
     output_to_html(total_gains, "output_template.html", "tax-report.html")
