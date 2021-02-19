@@ -33,6 +33,8 @@
 # TODO: work out other currencies
 # TODO: compare methods here with strategy in README and update/note differences
 # TODO: check tax strategy
+# TODO: Explain fees
+# TODO: Fix poloniex fee exporting (they are getting fee currency incorrect)
 import json
 import sys
 import csv
@@ -480,7 +482,7 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     TOTAL_COSTS = sum([g.cost_basis for g in relevant_capital_gains])
     TOTAL_GAINS = sum([g.native_currency_gain_value for g in relevant_capital_gains])
     TOTAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
-    # TODO: Explain fees
+
 
     TOTAL_TAXABLE_GAINS = max(0, TOTAL_GAINS - UNTAXABLE_ALLOWANCE)
     TAX_OWED = TOTAL_TAXABLE_GAINS * TAX_RATE
@@ -520,8 +522,8 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
 
 def main():
     trades = read_csv_into_trade_list(TRADE_CSV)
-    fees = read_csv_into_fee_list(FEE_CSV)
-    assign_fees_to_trades(trades, fees)
+    # fees = read_csv_into_fee_list(FEE_CSV)
+    # assign_fees_to_trades(trades, fees)
     total_gains = calculate_capital_gain(trades)
 
     output_to_html(total_gains, "output_template.html", "tax-report.html")

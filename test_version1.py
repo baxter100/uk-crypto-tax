@@ -4,10 +4,8 @@ from calculator import *
 sample_csv = "examples/sample-trade-list.csv"
 sample_fee_csv = "examples/sample-fee-list.csv"
 
+
 # check that things that should be floats are float and strings are strings
-
-
-# TODO: Test fees
 
 class Test(unittest.TestCase):
     def test_trade_csv_loading(self):
@@ -22,7 +20,7 @@ class Test(unittest.TestCase):
 
         # trade list should be in chrono order
         for x in range(0, len(trade_list)):
-            print(trade_list[x].date)
+
             for y in range(0, len(trade_list)):
                 if x < y:
                     self.assertLess(trade_list[x].date, trade_list[y].date)
@@ -40,11 +38,10 @@ class Test(unittest.TestCase):
         assign_fees_to_trades(trade_list, fee_list)
 
         trade_one = trade_list[0]
-        print(trade_one)
+
         self.assertEqual(trade_one.fee.fee_amount, 0.3)
         self.assertEqual(trade_one.fee.fee_currency, "XRP")
         self.assertEqual(trade_one.fee.fee_value_gbp_at_trade, 1.2)
-
 
     def test_matching_edge_cases(self):
         disposal_date = datetime.strptime("15.03.2021 18:13", DATE_FORMAT)
