@@ -117,8 +117,9 @@ class Trade:
         self.native_value_per_coin = 0
         self.native_cost_per_coin = 0
         if self.buy_amount != 0:
-            self.native_cost_per_coin = self.sell_value_gbp / self.buy_amount
             self.native_value_per_coin = self.buy_value_gbp / self.buy_amount
+
+            self.native_cost_per_coin = self.sell_value_gbp / self.buy_amount
 
         self.unaccounted_buy_amount = self.buy_amount
         self.unaccounted_sell_amount = self.sell_amount
@@ -138,6 +139,11 @@ class Trade:
                          float(row[TradeColumn.SELL_VALUE_GBP]),
                          datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
                          row[TradeColumn.EXCHANGE])
+
+    def account_for_fee_in_cost(self):
+        self.native_cost_per_coin = 0
+        if self.buy_amount != 0:
+            self.native_cost_per_coin = (self.sell_value_gbp + self.fee.fee_value_gbp_at_trade) / self.buy_amount
 
     def get_current_cost(self):
         if self.buy_amount == 0:
@@ -223,16 +229,19 @@ class Gain:
             self.cost_basis = average_cost * self.disposal_amount_accounted
         self.disposal_trade = disposal
         proportion_accounted_for = self.disposal_amount_accounted / disposal.sell_amount
-        # TODO:  Maybe need to account for fees in buys too?
-        self.fee_value_gbp = 0
-        if disposal.fee is not None:
-            self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade * proportion_accounted_for
+
+
 
         # NOTE: profit uses disposal.buy_value_gbp, not disposal.sell_value_gbp
         self.proceeds = disposal.buy_value_gbp * proportion_accounted_for
         self.native_currency_gain_value = self.proceeds - self.cost_basis
 
+        self.fee_value_gbp = 0
+        if disposal.fee is not None:
+            self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade * proportion_accounted_for
 
+        if self.disposal_trade.buy_currency == NATIVE_CURRENCY:
+            self.native_currency_gain_value -= self.fee_value_gbp
 
     def html_format(self):
         pass
@@ -297,7 +306,7 @@ def fee_matches_trade(fee, trade):
            trade.buy_amount == fee.trade_buy_amount
 
 
-def assign_fees_to_trades(trades, fees):
+def assign_fees_to_trades(trades: List[Trade], fees: List[Fee]):
     for fee in fees:
         matching_trades = [t for t in trades if fee_matches_trade(fee, t)]
         if len(matching_trades) == 0:
@@ -307,6 +316,7 @@ def assign_fees_to_trades(trades, fees):
         else:
             trade = matching_trades[0]
             trade.fee = fee
+            trade.account_for_fee_in_cost()
 
 
 def within_tax_year(trade, tax_year):
@@ -438,8 +448,6 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     [relevant_trades.append(g.disposal_trade) for g in gains if within_tax_year(g.disposal_trade,
                                                                                 TAX_YEAR) and g.disposal_trade not in relevant_trades]
 
-
-
     day_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.DAY_FIFO]
     DAY_GAINS = sum([g.native_currency_gain_value for g in day_gains])
     bnb_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.BNB_FIFO]
@@ -451,8 +459,9 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     TOTAL_COSTS = sum([g.cost_basis for g in relevant_capital_gains])
     TOTAL_GAINS = sum([g.native_currency_gain_value for g in relevant_capital_gains])
     TOTAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
-    # TODO: Take fees off gain.
-    # TODO: Explain fees for disposals are added at the end
+    # TODO: add fees to cost bases
+    # TODO: Take fees off gain in disposals to GBP.
+    # TODO: Explain fees
 
     TOTAL_TAXABLE_GAINS = max(0, TOTAL_GAINS - UNTAXABLE_ALLOWANCE)
     TAX_OWED = TOTAL_TAXABLE_GAINS * TAX_RATE
@@ -482,11 +491,10 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
                           TOTAL_COSTS=TOTAL_COSTS,
                           TAX_OWED=TAX_OWED,
                           TOTAL_GAINS=TOTAL_GAINS,
-                          TOTAL_TAXABLE_GAINS = TOTAL_TAXABLE_GAINS,
+                          TOTAL_TAXABLE_GAINS=TOTAL_TAXABLE_GAINS,
 
                           GAINS_HEADING="",
                           GAINS=GAINS)
-
 
 
 def main():

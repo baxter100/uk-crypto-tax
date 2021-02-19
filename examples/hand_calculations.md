@@ -14,15 +14,15 @@ The cost basis is the amount it cost to buy the 0.5 disposed ETH.
 cost basis =  (417/0.6) x 0.5 = £347.5
 
 There is also a fee for this buy which we should add to the cost basis (in proportion to the amount of the buy allocated):
-Fee to add = (0.2/0.6) x 0.5 = £0.17
+Fee to add = (0.2/0.6) x 0.5 = £0.16666667
 
 When we make a disposal into the native currency (GBP) we also add the fee from the disposal to the cost:
 Fee to add = £1.20
 
-Gain from this pair of trades is 400 - 347.5 - 0.17 - 1.20 = £51.13
+Gain from this pair of trades is 400 - 347.5 - 0.16666667 - 1.20 = £51.13333333
 
 There are no other day matches.
-Total gains from same day trades = £51.13
+Total gains from same day trades = £51.13333333
 
 ### BNB matches
 Next for any unaccounted for disposal we look for corresponding buys within the next 30 days.
@@ -68,21 +68,21 @@ For trade 5, the avg cost per coin is from trade 4:
 502.11 + 0.1/900
 
 And the cost basis for the disposed 802 USDT is therefore:
-(502.11+ 0.1/900) x 802 = 447.525
+(502.11+ 0.1/900) x 802 = 447.524911
 
 Proceeds from this 802 USDT are:
 575.73
 
 The gain from trade 5 here is then:
-575.73 - 447.525 = £128.205
+575.73 - 447.525 = £128.2050889
 
-Total gains from avg trades = -£1.135025 + £128.205 = £127.07
+Total gains from avg trades = -£1.135025 + £128.2050889 = £127.07006
 
 ### Total
 
 Total capital gains are therefore:
 
-£51.13 - £24.8019802 + £127.07 = £153.398
+£51.13333333 - £24.8019802 + £127.07006 = £153.40141
 
 
 Note: Look how long this takes for four trades... This is why we automate things

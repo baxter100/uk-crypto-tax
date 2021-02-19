@@ -31,9 +31,20 @@ class Test(unittest.TestCase):
         fee_list = read_csv_into_fee_list(sample_fee_csv)
         self.assertIsInstance(fee_list[0], Fee)
         fee_one = fee_list[0]
-        self.assertEqual(fee_one.fee_amount, 0.1)
-        self.assertEqual(fee_one.fee_currency, "BTC")
-        self.assertEqual(fee_one.fee_value_gbp_at_trade, 0.1)
+        self.assertEqual(fee_one.fee_amount, 0.3)
+        self.assertEqual(fee_one.fee_currency, "XRP")
+        self.assertEqual(fee_one.fee_value_gbp_at_trade, 1.2)
+
+        trade_list = read_csv_into_trade_list(sample_csv)
+
+        assign_fees_to_trades(trade_list, fee_list)
+
+        trade_one = trade_list[0]
+        print(trade_one)
+        self.assertEqual(trade_one.fee.fee_amount, 0.3)
+        self.assertEqual(trade_one.fee.fee_currency, "XRP")
+        self.assertEqual(trade_one.fee.fee_value_gbp_at_trade, 1.2)
+
 
     def test_matching_edge_cases(self):
         disposal_date = datetime.strptime("15.03.2021 18:13", DATE_FORMAT)
@@ -70,13 +81,15 @@ class Test(unittest.TestCase):
         self.assertTrue(bnb_condition(disposal, buy5))
 
     def test_gains(self):
-        day_gains = 52.5
+        day_gains = 51.13333333
         bnb_gains = -24.8019802
-        avg_gains = 127.1597395
-        total_gains = 154.8577593
+        avg_gains = 127.07006
+        total_gains = 153.40141
         tax_year = 2018
 
         trade_list = read_csv_into_trade_list(sample_csv)
+        fees = read_csv_into_fee_list(sample_fee_csv)
+        assign_fees_to_trades(trade_list, fees)
 
         calculated_day = calculate_day_gains_fifo(trade_list)
         relevant_day_gains = sum(
@@ -94,6 +107,8 @@ class Test(unittest.TestCase):
         self.assertAlmostEqual(avg_gains, relevant_104_gains, 4)
 
         trade_list = read_csv_into_trade_list(sample_csv)
+        fees = read_csv_into_fee_list(sample_fee_csv)
+        assign_fees_to_trades(trade_list, fees)
         capital_gains = calculate_capital_gain(trade_list)
         relevant_capital_gains_sum = sum(
             [g.native_currency_gain_value for g in capital_gains if within_tax_year(g.disposal_trade, tax_year)])
