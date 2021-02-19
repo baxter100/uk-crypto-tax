@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Capital Gains calculated for {TAX_YEAR_START}/{TAX_YEAR_END}</title>
-    
+
 </head>
 <body>
 <h2>Capital Gains calculated for {TAX_YEAR_START}/{TAX_YEAR_END} </h2>
@@ -16,13 +16,19 @@
 <h3> Gain from leftover disposals using FIFO with accompanying buy trades in the future: {FUTURE_GAINS}.</h3>
 <h3> Gain from leftover disposals with no accompanying buy: {UNACCOUNTED_GAINS}</h3>
 
- <h3>Disposal Proceeds: {TOTAL_PROCEEDS}. Allowable Costs: {TOTAL_COSTS}. Total Capital Gains for {TAX_YEAR_START}/{TAX_YEAR_END}: {TOTAL_GAINS}</h3>
+<h3>Disposal Proceeds: {TOTAL_PROCEEDS}. Allowable Costs: {TOTAL_COSTS}. Total Capital Gains for
+    {TAX_YEAR_START}/{TAX_YEAR_END}: {TOTAL_GAINS}</h3>
 <h3> Total Taxable Gain for 2019/2020 (assuming usual allowances): {TOTAL_TAXABLE_GAINS} </h3>
 <h3> Total tax owed at 10% tax rate: {TAX_OWED} </h3>
 
+<p>In the following table a detailed list of gains is given (gains are portions of disposals which have been assigned a
+    cost basis according to the given rules). The given gain type is the rule used to calculated the
+    gain. Note "FIFO (future)" indicates the gain is calculated by matching the disposal using FIFO on future trades.
+    "Unaccounted" indicates that there is no corresponding by for that portion of the disposal and therefore the cost
+    basis is set to 0. Amount is the amount of the disposal accounted for in this gain.</p>
 <table>
     <tr>{GAINS_HEADING}</tr>
-{GAINS}
+    {GAINS}
 </table>
 </body>
 </html>
