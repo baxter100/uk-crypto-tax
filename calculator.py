@@ -59,6 +59,7 @@ class GainType(Enum):
     DAY_FIFO = 1
     BNB_FIFO = 2
     AVERAGE = 3
+    FUTURE_FIFO = 4
 
 
 # TODO: Load these better
@@ -245,10 +246,10 @@ class Gain:
         self.native_currency_gain_value = self.proceeds - self.cost_basis
 
         self.fee_value_gbp = 0
-        if disposal.fee is not None:
-            self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade * proportion_accounted_for
-
         if self.disposal_trade.buy_currency == NATIVE_CURRENCY:
+
+            if disposal.fee is not None:
+                self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade * proportion_accounted_for
             self.native_currency_gain_value -= self.fee_value_gbp
 
     def html_format(self):
@@ -276,11 +277,12 @@ def read_csv_into_trade_list(csv_filename):
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             next(reader)  # Ignore Header Row
-            trades = [Trade.from_csv(row) for row in list(reader) if row[TradeColumn.TRADE_TYPE] in TRADE_TYPES_TO_IMPORT]
+            trades = [Trade.from_csv(row) for row in list(reader) if
+                      row[TradeColumn.TRADE_TYPE] in TRADE_TYPES_TO_IMPORT]
             trades.sort(key=lambda trade: trade.date)
 
-            for i in range(0,len(trades)):
-                trade= trades[i]
+            for i in range(0, len(trades)):
+                trade = trades[i]
                 [logger.warning(f"TRADE Warning  - Possible Duplicates:{trade} and {trade2}.") for trade2 in trades if
                  trade.is_possible_duplicate(trade2) and trades.index(trade2) != i]
 
@@ -304,10 +306,10 @@ def read_csv_into_fee_list(csv_filename):
             fees.sort(key=lambda fee: fee.date)
             logger.debug(f"Loaded {len(fees)} fees from {csv_filename}.")
 
-            for i in range(0,len(fees)):
-                fee= fees[i]
+            for i in range(0, len(fees)):
+                fee = fees[i]
                 [logger.warning(f"FEE Warning - Possible Duplicates:{fee} and {fee2}.") for fee2 in fees if
-                 fee.is_possible_duplicate(fee2)  and fees.index(fee2) != i]
+                 fee.is_possible_duplicate(fee2) and fees.index(fee2) != i]
 
             return fees
     except FileNotFoundError as e:
@@ -377,6 +379,13 @@ def calculate_bnb_gains_fifo(trade_list):
     return calculate_fifo_gains(trade_list, bnb_condition, GainType.BNB_FIFO)
 
 
+def calculate_future_gains_fifo(trade_list):
+
+    condition = lambda disposal, corresponding_buy: \
+        disposal.date.date() < corresponding_buy.date.date()
+    return calculate_fifo_gains(trade_list, condition, GainType.FUTURE_FIFO)
+
+
 def calculate_fifo_gains(trade_list, trade_within_date_range, gain_type):
     gains = []
     for disposal in trade_list:
@@ -420,16 +429,10 @@ def calculate_104_gains_for_asset(asset, trade_list: List[Trade]):
                 pool_of_actual_cost -= gain.cost_basis
 
                 trade.unaccounted_sell_amount = unaccounted_for_amount
-            else:
-                # do future fifo
-                pass
 
-            if unaccounted_for_amount != 0:
-                # Do future FIFO
-                # TODO: Where disposal is not fully accounted for, need to do FIFO on later trades(after all 104 holdings have been done)
-                #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
-                # raise ValueError
-                pass
+
+
+
 
     return gain_list
 
@@ -447,17 +450,25 @@ def calculate_104_holding_gains(trade_list: List[Trade]):
     return gains
 
 
-def calculate_future_fifo_gains(trade_list: List[Trade]):
-    return []
-    # TODO: Go through future trades
-
-
 def calculate_capital_gain(trade_list: List[Trade]):
     gains = []
     gains.extend(calculate_day_gains_fifo(trade_list))
     gains.extend(calculate_bnb_gains_fifo(trade_list))
     gains.extend(calculate_104_holding_gains(trade_list))
-    gains.extend(calculate_future_fifo_gains(trade_list))
+
+
+    # Where disposal is not fully accounted for, need to do FIFO on later trades(after all 104 holdings have been done)
+    #   see https://bettingbitcoin.io/cryptocurrency-uk-tax-treatments
+
+    gains.extend(calculate_future_gains_fifo(trade_list))
+
+    for trade in trade_list:
+        if trade.sell_currency != NATIVE_CURRENCY and trade.unaccounted_sell_amount != 0:
+            logger.warning(f"Trade: {trade} has unaccounted for disposal of {trade.unaccounted_sell_amount} {trade.sell_currency} ")
+            logger.warning("These trade will be processed with cost basis 0")
+
+
+
     return gains
 
 
@@ -481,8 +492,7 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     TOTAL_PROCEEDS = sum([g.proceeds for g in relevant_capital_gains])
     TOTAL_COSTS = sum([g.cost_basis for g in relevant_capital_gains])
     TOTAL_GAINS = sum([g.native_currency_gain_value for g in relevant_capital_gains])
-    TOTAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
-
+    DISPOSAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
 
     TOTAL_TAXABLE_GAINS = max(0, TOTAL_GAINS - UNTAXABLE_ALLOWANCE)
     TAX_OWED = TOTAL_TAXABLE_GAINS * TAX_RATE
@@ -507,7 +517,7 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
                           DAY_GAINS=DAY_GAINS,
                           BNB_GAINS=BNB_GAINS,
                           AVG_GAINS=AVG_GAINS,
-                          TOTAL_FEE_VALUE=TOTAL_FEE_VALUE,
+                          DISPOSAL_FEE_VALUE=DISPOSAL_FEE_VALUE,
                           TOTAL_PROCEEDS=TOTAL_PROCEEDS,
                           TOTAL_COSTS=TOTAL_COSTS,
                           TAX_OWED=TAX_OWED,
