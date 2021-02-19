@@ -223,7 +223,7 @@ class Fee:
 
 
 class Gain:
-    heading = "<th>Gain Type</th>" \
+    heading = "<th>Match Type</th>" \
               "<th>Amount</th>" \
               "<th>Currency</th>" \
               "<th>Date Acquired</th>" \
