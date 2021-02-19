@@ -77,6 +77,7 @@ class TradeColumn(IntEnum):
 
 # TODO: Load these better
 class FeeColumn(IntEnum):
+    TRADE_TYPE = configs["FEE_CSV_INDICES"]["TRADE_TYPE"]
     FEE_AMOUNT = configs["FEE_CSV_INDICES"]["FEE_AMOUNT"]
     FEE_CURRENCY = configs["FEE_CSV_INDICES"]["FEE_CURRENCY"]
     FEE_VALUE_GBP_THEN = configs["FEE_CSV_INDICES"]["FEE_VALUE_GBP_THEN"]
@@ -92,6 +93,7 @@ class FeeColumn(IntEnum):
 BNB_TIME_DURATION = timedelta(days=configs["BNB_TIME_DURATION"])
 DATE_FORMAT = configs["DATE_FORMAT"]
 TRADE_TYPES_TO_IMPORT = configs["TRADE_TYPES_TO_IMPORT"]
+FEE_TYPES_TO_IMPORT = configs["FEE_TYPES_TO_IMPORT"]
 NATIVE_CURRENCY = configs["NATIVE_CURRENCY"]
 TAX_YEAR = configs["TAX_YEAR"]
 UNTAXABLE_ALLOWANCE = configs["ANNUAL_UNTAXABLE_ALLOWANCE"][str(TAX_YEAR)]
@@ -126,19 +128,18 @@ class Trade:
 
     @staticmethod
     def from_csv(row):
-        if row[TradeColumn.TRADE_TYPE] in TRADE_TYPES_TO_IMPORT:
 
-            for ind, val in enumerate(row):
-                if val == "-":
-                    row[ind] = 0
-            return Trade(float(row[TradeColumn.BUY_AMOUNT]),
-                         row[TradeColumn.BUY_CURRENCY],
-                         float(row[TradeColumn.BUY_VALUE_GBP]),
-                         float(row[TradeColumn.SELL_AMOUNT]),
-                         row[TradeColumn.SELL_CURRENCY],
-                         float(row[TradeColumn.SELL_VALUE_GBP]),
-                         datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
-                         row[TradeColumn.EXCHANGE])
+        for ind, val in enumerate(row):
+            if val == "-":
+                row[ind] = 0
+        return Trade(float(row[TradeColumn.BUY_AMOUNT]),
+                     row[TradeColumn.BUY_CURRENCY],
+                     float(row[TradeColumn.BUY_VALUE_GBP]),
+                     float(row[TradeColumn.SELL_AMOUNT]),
+                     row[TradeColumn.SELL_CURRENCY],
+                     float(row[TradeColumn.SELL_VALUE_GBP]),
+                     datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
+                     row[TradeColumn.EXCHANGE])
 
     def account_for_fee_in_cost(self):
         self.native_cost_per_coin = 0
@@ -169,6 +170,9 @@ class Trade:
     def is_viable_sell(self):
         return self.unaccounted_sell_amount > 0 and self.sell_currency != NATIVE_CURRENCY and self.sell_currency != ""
 
+    def is_possible_duplicate(self, trade):
+        return self.buy_amount == trade.buy_amount and self.buy_currency == trade.buy_currency and self.buy_value_gbp == trade.buy_value_gbp and self.sell_amount == trade.sell_amount and self.sell_currency == trade.sell_currency and self.sell_value_gbp == trade.sell_value_gbp and self.date == trade.date and self.exchange == trade.exchange
+
     def __repr__(self):
         return f"<Trade {self.date} :: {self.buy_amount} {self.buy_currency} ({self.buy_value_gbp} GBP) <- " \
                f"{self.sell_amount} {self.sell_currency} ({self.sell_value_gbp} GBP)>"
@@ -188,6 +192,9 @@ class Fee:
         self.trade_sell_currency = trade_sell_currency
         self.date = date
         self.exchange = exchange
+
+    def is_possible_duplicate(self, fee):
+        return self.fee_amount == fee.fee_amount and self.fee_currency == fee.fee_currency and self.fee_value_gbp_at_trade == fee.fee_value_gbp_at_trade and self.fee_value_gbp_now == fee.fee_value_gbp_now and self.trade_buy_amount == fee.trade_buy_amount and self.trade_buy_currency == fee.trade_buy_currency and self.trade_sell_amount == fee.trade_sell_amount and self.trade_sell_currency == fee.trade_sell_currency and self.date == fee.date and self.exchange == fee.exchange
 
     @staticmethod
     def from_csv(row):
@@ -228,9 +235,8 @@ class Gain:
         else:
             self.cost_basis = average_cost * self.disposal_amount_accounted
         self.disposal_trade = disposal
+
         proportion_accounted_for = self.disposal_amount_accounted / disposal.sell_amount
-
-
 
         # NOTE: profit uses disposal.buy_value_gbp, not disposal.sell_value_gbp
         self.proceeds = disposal.buy_value_gbp * proportion_accounted_for
@@ -268,8 +274,14 @@ def read_csv_into_trade_list(csv_filename):
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             next(reader)  # Ignore Header Row
-            trades = [Trade.from_csv(row) for row in list(reader)]
+            trades = [Trade.from_csv(row) for row in list(reader) if row[TradeColumn.TRADE_TYPE] in TRADE_TYPES_TO_IMPORT]
             trades.sort(key=lambda trade: trade.date)
+
+            for i in range(0,len(trades)):
+                trade= trades[i]
+                [logger.warning(f"TRADE Warning  - Possible Duplicates:{trade} and {trade2}.") for trade2 in trades if
+                 trade.is_possible_duplicate(trade2) and trades.index(trade2) != i]
+
             logger.debug(f"Loaded {len(trades)} trades from {csv_filename}.")
             return trades
     except FileNotFoundError as e:
@@ -286,9 +298,15 @@ def read_csv_into_fee_list(csv_filename):
             reader = csv.reader(csv_file)
             next(reader)  # Ignore header row
 
-            fees = [Fee.from_csv(row) for row in list(reader)]
+            fees = [Fee.from_csv(row) for row in list(reader) if row[FeeColumn.TRADE_TYPE] in FEE_TYPES_TO_IMPORT]
             fees.sort(key=lambda fee: fee.date)
             logger.debug(f"Loaded {len(fees)} fees from {csv_filename}.")
+
+            for i in range(0,len(fees)):
+                fee= fees[i]
+                [logger.warning(f"FEE Warning - Possible Duplicates:{fee} and {fee2}.") for fee2 in fees if
+                 fee.is_possible_duplicate(fee2)  and fees.index(fee2) != i]
+
             return fees
     except FileNotFoundError as e:
         logger.error(f"Could not find fees csv: '{csv_filename}'.")
@@ -313,6 +331,9 @@ def assign_fees_to_trades(trades: List[Trade], fees: List[Fee]):
             logger.warning(f"Could not find trade for fee {fee}.")
         elif len(matching_trades) > 1:
             logger.error(f"Found multiple trades for fee {fee}.")
+            trade = matching_trades[0]
+            trade.fee = fee
+            trade.account_for_fee_in_cost()
         else:
             trade = matching_trades[0]
             trade.fee = fee
@@ -459,8 +480,6 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     TOTAL_COSTS = sum([g.cost_basis for g in relevant_capital_gains])
     TOTAL_GAINS = sum([g.native_currency_gain_value for g in relevant_capital_gains])
     TOTAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
-    # TODO: add fees to cost bases
-    # TODO: Take fees off gain in disposals to GBP.
     # TODO: Explain fees
 
     TOTAL_TAXABLE_GAINS = max(0, TOTAL_GAINS - UNTAXABLE_ALLOWANCE)
@@ -495,6 +514,8 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
 
                           GAINS_HEADING="",
                           GAINS=GAINS)
+
+    print(out)
 
 
 def main():

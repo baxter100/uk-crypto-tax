@@ -1,6 +1,6 @@
 {
 
-  "TAX_YEAR": 2020,
+  "TAX_YEAR": 2021,
   "NATIVE_CURRENCY": "GBP",
   "TRADE_CSV": "trade-list.csv",
   "FEE_CSV": "fee-list.csv",
@@ -16,6 +16,7 @@
     "2020": 12000,
     "2021": 12300
   },
+  "TAX_RATE":0.1,
   "BNB_TIME_DURATION": 30,
 
 
@@ -35,8 +36,9 @@
     "EXCHANGE" : 10,
     "DATE" : 12
   },
-
+  "FEE_TYPES_TO_IMPORT": ["Trade"],
   "FEE_CSV_INDICES": {
+    "TRADE_TYPE": 0,
     "FEE_AMOUNT" : 1,
     "FEE_CURRENCY" : 2,
     "FEE_VALUE_GBP_THEN" : 3,
