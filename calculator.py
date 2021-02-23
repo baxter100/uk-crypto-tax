@@ -100,8 +100,6 @@ TRADE_TYPES_TO_IMPORT = configs["TRADE_TYPES_TO_IMPORT"]
 FEE_TYPES_TO_IMPORT = configs["FEE_TYPES_TO_IMPORT"]
 NATIVE_CURRENCY = configs["NATIVE_CURRENCY"]
 TAX_YEAR = configs["TAX_YEAR"]
-UNTAXABLE_ALLOWANCE = configs["ANNUAL_UNTAXABLE_ALLOWANCE"][str(TAX_YEAR)]
-TAX_RATE = configs["TAX_RATE"]
 TRADE_CSV = configs["TRADE_CSV"]
 FEE_CSV = configs["FEE_CSV"]
 
@@ -532,12 +530,9 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     TOTAL_GAINS = sum([g.native_currency_gain_value for g in relevant_capital_gains])
     DISPOSAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
 
-    TOTAL_TAXABLE_GAINS = max(0, TOTAL_GAINS - UNTAXABLE_ALLOWANCE)
-    TAX_OWED = TOTAL_TAXABLE_GAINS * TAX_RATE
+
 
     print(f"Total gain for tax year {TAX_YEAR}: {TOTAL_GAINS}.")
-    print(
-        f"Total taxable gain for tax year {TAX_YEAR} (total gain over allowance:  {UNTAXABLE_ALLOWANCE}) = {TOTAL_TAXABLE_GAINS}.")
 
     fin = open(template_file)
     contents = fin.read()
@@ -561,9 +556,9 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
                           DISPOSAL_FEE_VALUE=DISPOSAL_FEE_VALUE,
                           TOTAL_PROCEEDS=TOTAL_PROCEEDS,
                           TOTAL_COSTS=TOTAL_COSTS,
-                          TAX_OWED=TAX_OWED,
+
                           TOTAL_GAINS=TOTAL_GAINS,
-                          TOTAL_TAXABLE_GAINS=TOTAL_TAXABLE_GAINS,
+
 
                           GAINS_HEADING=Gain.heading,
                           GAINS=GAINS)

@@ -13,7 +13,9 @@ This repo is intended as a cleaner version the original, which seems to be outda
 8. [Contact](#contact)
 
 ### Introduction
-Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK
+Tool written in Python for calculating Capital Gains Tax on cryptocurrency trades in UK.
+
+The tool simply works out gains using the below strategy and does not work out your tax liability as this is related to your income, see https://www.gov.uk/capital-gains-tax/rates.
 
 The easiest way to get started is by uploading your trades to https://cointracking.info/ and then downloading the trade list from https://cointracking.info/trade_prices.php
 
