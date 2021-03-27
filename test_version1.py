@@ -78,7 +78,7 @@ class Test(unittest.TestCase):
         self.assertTrue(bnb_condition(disposal, buy5))
 
     def test_gains(self):
-        # TODO: update test to match fees.
+
         day_gains = 51.13333333
         bnb_gains = -24.90099
         avg_gains = 127.15818
