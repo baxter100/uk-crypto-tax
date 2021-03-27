@@ -221,14 +221,16 @@ class Fee:
 
 
 class Gain:
-    heading = "<th>Match Type</th>" \
-              "<th>Amount</th>" \
+    # TODO: check if fee is added to costbasis
+    heading = "<th>Date Sold</th>" \
+              "<th>Match Type</th>" \
               "<th>Currency</th>" \
-              "<th>Date Acquired</th>" \
-              "<th>Date Sold</th>" \
+              "<th>Disposal amount accounted for</th>" \
               "<th>Proceeds</th>" \
               "<th>Cost basis</th>" \
-              "<th>Gain Loss</th>"
+              "<th>Fee Amount</th>" \
+              "<th>Gain Loss</th>" \
+              "<th>Date Acquired</th>"
 
     def __init__(self, gain_type: GainType, disposal_amount, disposal: Trade,
                  corresponding_buy: Optional[Trade] = None, average_cost=None):
@@ -236,7 +238,7 @@ class Gain:
         self.gain_type = gain_type
         self.currency = disposal.sell_currency
         self.date_sold = disposal.date
-        self.disposal_amount_accounted = disposal_amount
+        self.disposal_amount_accounted = round(disposal_amount, 8)
 
         self.sold_location = disposal.exchange
         self.corresponding_buy = corresponding_buy
@@ -271,6 +273,7 @@ class Gain:
         disposal_date = self.date_sold.strftime(DATE_FORMAT)
         proceeds = round(self.proceeds, 2)
         cost_basis = round(self.cost_basis, 2)
+        fee = round(self.fee_value_gbp, 2)
         native_currency_gain_value = round(self.native_currency_gain_value, 2)
         gain_type = ""
         if self.gain_type == GainType.DAY_FIFO:
@@ -283,7 +286,15 @@ class Gain:
             gain_type = "FIFO (future)"
         if self.gain_type == GainType.UNACCOUNTED:
             gain_type = "Unaccounted"
-        return f"<tr><td>{gain_type}</td> <td>{self.disposal_amount_accounted}</td> <td>{self.currency}</td> <td>{corresponding_buy_date}</td>  <td>{disposal_date}</td> <td>{proceeds}</td> <td> {cost_basis}</td> <td>{native_currency_gain_value}</td></tr>"
+        return f"  <tr><td>{disposal_date}</td>" \
+               f"<td>{gain_type}</td>" \
+               f"<td>{self.currency}</td>" \
+               f" <td>{self.disposal_amount_accounted}</td> " \
+               f" <td>{proceeds}</td>" \
+               f" <td> {cost_basis}</td>" \
+               f" <td> {fee}</td>" \
+               f" <td>{native_currency_gain_value}</td>" \
+               f" <td> {corresponding_buy_date} </td> </tr>"
 
     def __str__(self):
         if self.corresponding_buy is not None:
@@ -512,7 +523,7 @@ def calculate_capital_gain(trade_list: List[Trade]):
 
 def output_to_html(gains: List[Gain], template_file, html_output_filename):
     relevant_capital_gains = [g for g in gains if within_tax_year(g.disposal_trade, TAX_YEAR)]
-    relevant_capital_gains.sort(key=lambda g: g.date_sold)
+    relevant_capital_gains.sort(key=lambda g: g.date_sold, reverse=True)
     relevant_trades = []
     [relevant_trades.append(g.disposal_trade) for g in gains if within_tax_year(g.disposal_trade,
                                                                                 TAX_YEAR) and g.disposal_trade not in relevant_trades]
@@ -562,7 +573,7 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
 
                           GAINS_HEADING=Gain.heading,
                           GAINS=gains_string)
-    print(out)
+    # print(out)
     file = open(html_output_filename, "w+")
     file.write(out)
 
