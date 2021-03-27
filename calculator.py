@@ -213,7 +213,7 @@ class Fee:
 
 
 class Gain:
-    # TODO: check if fee is added to costbasis
+
     heading = "<th>Date Sold</th>" \
               "<th>Match Type</th>" \
               "<th>Currency</th>" \
@@ -253,7 +253,9 @@ class Gain:
         if self.disposal_trade.sell_currency != NATIVE_CURRENCY:
 
             if disposal.fee is not None:
+
                 self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade * proportion_accounted_for
+
             self.native_currency_gain_value -= self.fee_value_gbp
 
     def html_format(self):
