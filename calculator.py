@@ -140,7 +140,7 @@ class Trade:
                      float(row[TradeColumn.SELL_AMOUNT]),
                      row[TradeColumn.SELL_CURRENCY],
                      float(row[TradeColumn.SELL_VALUE_GBP]),
-                     datetime.strptime(row[TradeColumn.DATE],DATE_FORMAT),
+                     datetime.strptime(row[TradeColumn.DATE], DATE_FORMAT),
                      row[TradeColumn.EXCHANGE])
 
     def account_for_fee_in_cost(self):
@@ -269,9 +269,9 @@ class Gain:
             corresponding_buy_date = self.corresponding_buy.date.strftime(DATE_FORMAT)
 
         disposal_date = self.date_sold.strftime(DATE_FORMAT)
-        proceeds = round(self.proceeds,2)
-        cost_basis = round(self.cost_basis,2)
-        native_currency_gain_value = round(self.native_currency_gain_value,2)
+        proceeds = round(self.proceeds, 2)
+        cost_basis = round(self.cost_basis, 2)
+        native_currency_gain_value = round(self.native_currency_gain_value, 2)
         gain_type = ""
         if self.gain_type == GainType.DAY_FIFO:
             gain_type = "Same Day"
@@ -284,7 +284,6 @@ class Gain:
         if self.gain_type == GainType.UNACCOUNTED:
             gain_type = "Unaccounted"
         return f"<tr><td>{gain_type}</td> <td>{self.disposal_amount_accounted}</td> <td>{self.currency}</td> <td>{corresponding_buy_date}</td>  <td>{disposal_date}</td> <td>{proceeds}</td> <td> {cost_basis}</td> <td>{native_currency_gain_value}</td></tr>"
-
 
     def __str__(self):
         if self.corresponding_buy is not None:
@@ -506,62 +505,63 @@ def calculate_capital_gain(trade_list: List[Trade]):
     return gains
 
 
-def output_to_html(gains: List[Gain], template_file, html_output_filename):
+# def output_to_csv(gains: List[Gain], csv_output_filename):
+#     with open(csv_output_filename,'w') as csvfile:
+#         gain_writer = csv.writer(csvfile)
+#         gain_writer.writerow(f"Gains calculated for {TAX_YEAR_START}/{TAX_YEAR_END}")
 
+def output_to_html(gains: List[Gain], template_file, html_output_filename):
     relevant_capital_gains = [g for g in gains if within_tax_year(g.disposal_trade, TAX_YEAR)]
     relevant_capital_gains.sort(key=lambda g: g.date_sold)
     relevant_trades = []
     [relevant_trades.append(g.disposal_trade) for g in gains if within_tax_year(g.disposal_trade,
                                                                                 TAX_YEAR) and g.disposal_trade not in relevant_trades]
 
-    day_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.DAY_FIFO]
-    DAY_GAINS = sum([g.native_currency_gain_value for g in day_gains])
-    bnb_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.BNB_FIFO]
-    BNB_GAINS = sum([g.native_currency_gain_value for g in bnb_gains])
-    avg_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.AVERAGE]
-    AVG_GAINS = sum([g.native_currency_gain_value for g in avg_gains])
-    future_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.FUTURE_FIFO]
-    FUTURE_GAINS = sum([g.native_currency_gain_value for g in future_gains])
-    unaccounted_gains = [g for g in relevant_capital_gains if g.gain_type == GainType.UNACCOUNTED]
-    UNACCOUNTED_GAINS = sum([g.native_currency_gain_value for g in unaccounted_gains])
+    day_gain_list = [g for g in relevant_capital_gains if g.gain_type == GainType.DAY_FIFO]
+    day_gain_sum = round(sum([g.native_currency_gain_value for g in day_gain_list]), 2)
+    bnb_gain_list = [g for g in relevant_capital_gains if g.gain_type == GainType.BNB_FIFO]
+    bnb_gain_sum = round(sum([g.native_currency_gain_value for g in bnb_gain_list]), 2)
+    avg_gain_list = [g for g in relevant_capital_gains if g.gain_type == GainType.AVERAGE]
+    avg_gain_sum = round(sum([g.native_currency_gain_value for g in avg_gain_list]), 2)
+    future_gain_list = [g for g in relevant_capital_gains if g.gain_type == GainType.FUTURE_FIFO]
+    future_gain_sum = round(sum([g.native_currency_gain_value for g in future_gain_list]), 2)
+    unaccounted_gain_list = [g for g in relevant_capital_gains if g.gain_type == GainType.UNACCOUNTED]
+    unaccounted_gain_sum = round(sum([g.native_currency_gain_value for g in unaccounted_gain_list]), 2)
 
-    TOTAL_PROCEEDS = sum([g.proceeds for g in relevant_capital_gains])
-    TOTAL_COSTS = sum([g.cost_basis for g in relevant_capital_gains])
-    TOTAL_GAINS = sum([g.native_currency_gain_value for g in relevant_capital_gains])
-    DISPOSAL_FEE_VALUE = sum([g.fee_value_gbp for g in relevant_capital_gains])
+    total_proceeds = round(sum([g.proceeds for g in relevant_capital_gains]), 2)
+    total_costs = round(sum([g.cost_basis for g in relevant_capital_gains]), 2)
+    total_gains = round(sum([g.native_currency_gain_value for g in relevant_capital_gains]), 2)
+    disposal_fee_value = round(sum([g.fee_value_gbp for g in relevant_capital_gains]), 2)
 
-
-
-    print(f"Total gain for tax year {TAX_YEAR}: {TOTAL_GAINS}.")
+    print(f"Total gain for tax year {TAX_YEAR}: {total_gains}.")
 
     fin = open(template_file)
     contents = fin.read()
 
     fin.close()
 
-    GAINS = ""
+    gains_string = ""
     for gain in relevant_capital_gains:
-        GAINS += (gain.html_format())
+        gains_string += (gain.html_format())
 
     out = contents.format(TAX_YEAR_START=TAX_YEAR - 1,
                           TAX_YEAR_END=TAX_YEAR,
                           NATIVE_CURRENCY=NATIVE_CURRENCY,
                           INPUT_TRADE_CSV=TRADE_CSV,
                           NUMBER_OF_DISPOSALS=len(relevant_trades),
-                          DAY_GAINS=DAY_GAINS,
-                          BNB_GAINS=BNB_GAINS,
-                          AVG_GAINS=AVG_GAINS,
-                          FUTURE_GAINS=FUTURE_GAINS,
-                          UNACCOUNTED_GAINS=UNACCOUNTED_GAINS,
-                          DISPOSAL_FEE_VALUE=DISPOSAL_FEE_VALUE,
-                          TOTAL_PROCEEDS=TOTAL_PROCEEDS,
-                          TOTAL_COSTS=TOTAL_COSTS,
+                          DAY_GAINS=day_gain_sum,
+                          BNB_GAINS=bnb_gain_sum,
+                          AVG_GAINS=avg_gain_sum,
+                          FUTURE_GAINS=future_gain_sum,
+                          UNACCOUNTED_GAINS=unaccounted_gain_sum,
+                          DISPOSAL_FEE_VALUE=disposal_fee_value,
+                          TOTAL_PROCEEDS=total_proceeds,
+                          TOTAL_COSTS=total_costs,
 
-                          TOTAL_GAINS=TOTAL_GAINS,
-
+                          TOTAL_GAINS=total_gains,
 
                           GAINS_HEADING=Gain.heading,
-                          GAINS=GAINS)
+                          GAINS=gains_string)
     print(out)
     file = open(html_output_filename, "w+")
     file.write(out)
