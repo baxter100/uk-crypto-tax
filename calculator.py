@@ -145,7 +145,7 @@ class Trade:
             portion = 1
         else:
             portion = self.unaccounted_buy_amount / self.buy_amount
-        if self.fee is not None:
+        if self.fee is not None and self.sell_currency == NATIVE_CURRENCY:
             raw_cost = self.sell_value_gbp + self.fee.fee_value_gbp_at_trade
         else:
             raw_cost = self.sell_value_gbp
@@ -250,7 +250,7 @@ class Gain:
         self.native_currency_gain_value = self.proceeds - self.cost_basis
 
         self.fee_value_gbp = 0
-        if self.disposal_trade.buy_currency == NATIVE_CURRENCY:
+        if self.disposal_trade.sell_currency != NATIVE_CURRENCY:
 
             if disposal.fee is not None:
                 self.fee_value_gbp = disposal.fee.fee_value_gbp_at_trade * proportion_accounted_for
@@ -345,8 +345,8 @@ def read_csv_into_fee_list(csv_filename):
                 [logger.warning(f"FEE Warning - Possible Duplicates:{fee} and {fee2}.") for fee2 in fees if
                  fee.is_possible_duplicate(fee2) and fees.index(fee2) != i]
 
-            [logger.warning(f"Unusual large fee amount of {fee.fee_value_gbp_at_trade} in fee: {fee}") for fee in fees
-             if fee.fee_value_gbp_at_trade > 99]
+            [logger.warning(f"FEE Warning - Unusual large fee amount of {fee.fee_value_gbp_at_trade} in fee: {fee}") for fee in fees
+             if fee.fee_value_gbp_at_trade > 20]
 
             return fees
     except FileNotFoundError as e:
@@ -371,7 +371,7 @@ def assign_fees_to_trades(trades: List[Trade], fees: List[Fee]):
         if len(matching_trades) == 0:
             logger.warning(f"Could not find trade for fee {fee}.")
         elif len(matching_trades) > 1:
-            logger.error(f"Found multiple trades for fee {fee}.")
+            logger.error(f"Found multiple trades for fee {fee}. (Assigning fee to first corresponding trade.")
             trade = matching_trades[0]
             trade.fee = fee
             trade.account_for_fee_in_cost()

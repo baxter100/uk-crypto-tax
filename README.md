@@ -57,6 +57,9 @@ When an asset is disposed of the fee for the sale is subtracted from the proceed
 
 Fees associated when buying assets with native currency are accounted for in the cost basis.
 
+Note: cointracking may confuse which currency the fee was paid in and miscalculate the GBP value of the fee, so check your fee files to make sure you're not reporting any abnormally high fees.
+
+
 #### Ambiguities around strategies
 
 There are various ambiguities around specifics of how gain should be calculated and we highlight them here. If you have
@@ -74,6 +77,8 @@ any experience here or advice, please get in touch (https://www.reddit.com/user/
 3. We are unsure whether gifts of coins/coins gained from hard forks are taxable events with costbasis 0 or not. At the
    moment, the tool doesn't calculate this as a taxable event. **WARNING: This can make big differences to overall
    calculated gain**
+   
+4. Assets acquired during forks are treated as if the asset has been bought with 0 GBP.
 
 ### Getting Started
 
@@ -111,6 +116,10 @@ Next change the tax year to calculate gains for the year you would like (2018 ta
 06/04/2017).
 
 ### Troubleshooting
+
+#### Logger
+
+The program will check for various abnormalities in the disposals (e.g. high fees, possible duplicate trades), check the console output to see these.
 
 #### Getting strange results?
 
