@@ -28,16 +28,6 @@
 #   * disposal with no corresponding buy --- should be costbasis of 0
 #   * A BnB check with edge cases (29 days, 30 days, 31 days)
 
-# TODO: work out for Gift/Tips
-# TODO: Fix importing with "-" and gifts/tips etc.
-# TODO: work out other currencies
-# TODO: compare methods here with strategy in README and update/note differences
-# TODO: Update readme to mention warnings
-# TODO: check tax strategy
-# TODO: Explain fees
-# TODO: Fix poloniex fee exporting (they are getting fee currency incorrect)
-# TODO: Fix html report. Rounding. Add more detail.
-
 import json
 import sys
 import csv
@@ -147,8 +137,7 @@ class Trade:
                      row[TradeColumn.EXCHANGE])
 
     def account_for_fee_in_cost(self):
-        self.native_cost_per_coin = 0
-        if self.buy_amount != 0:
+        if self.buy_amount != 0 and self.sell_currency == NATIVE_CURRENCY:
             self.native_cost_per_coin = (self.sell_value_gbp + self.fee.fee_value_gbp_at_trade) / self.buy_amount
 
     def get_current_cost(self):
@@ -228,10 +217,10 @@ class Gain:
     heading = "<th>Date Sold</th>" \
               "<th>Match Type</th>" \
               "<th>Currency</th>" \
-              "<th>Disposal amount accounted for</th>" \
+              "<th>Amount</th>" \
               "<th>Proceeds</th>" \
               "<th>Cost basis</th>" \
-              "<th>Fee Amount</th>" \
+              "<th>Fee</th>" \
               "<th>Gain Loss</th>" \
               "<th>Date Acquired</th>"
 
@@ -321,6 +310,7 @@ def read_csv_into_trade_list(csv_filename):
         with open(csv_filename, encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             next(reader)  # Ignore Header Row
+
             trades = [Trade.from_csv(row) for row in list(reader) if
                       row[TradeColumn.TRADE_TYPE] in TRADE_TYPES_TO_IMPORT]
             trades.sort(key=lambda trade: trade.date)
@@ -557,8 +547,10 @@ def output_to_html(gains: List[Gain], template_file, html_output_filename):
     gains_string = ""
     for gain in relevant_capital_gains:
         gains_string += (gain.html_format())
-
-    out = contents.format(TAX_YEAR_START=TAX_YEAR - 1,
+    STYLE = "<style> table {border-collapse: collapse;}" \
+            "td,th {padding: 1px;border-style: solid; border-width:thin;}</style>"
+    out = contents.format(STYLE=STYLE,
+                          TAX_YEAR_START=TAX_YEAR - 1,
                           TAX_YEAR_END=TAX_YEAR,
                           NATIVE_CURRENCY=NATIVE_CURRENCY,
                           INPUT_TRADE_CSV=TRADE_CSV,
@@ -588,7 +580,6 @@ def main():
     total_gains = calculate_capital_gain(trades)
 
     output_to_html(total_gains, "output_template.html", "tax-report.html")
-
 
 if __name__ == "__main__":
     main()
