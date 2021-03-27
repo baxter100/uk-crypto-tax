@@ -32,9 +32,12 @@
 # TODO: Fix importing with "-" and gifts/tips etc.
 # TODO: work out other currencies
 # TODO: compare methods here with strategy in README and update/note differences
+# TODO: Update readme to mention warnings
 # TODO: check tax strategy
 # TODO: Explain fees
 # TODO: Fix poloniex fee exporting (they are getting fee currency incorrect)
+# TODO: Fix html report. Rounding. Add more detail.
+
 import json
 import sys
 import csv
@@ -279,7 +282,7 @@ class Gain:
         if self.gain_type == GainType.DAY_FIFO:
             gain_type = "Same Day"
         if self.gain_type == GainType.BNB_FIFO:
-            gain_type = "BNB Day"
+            gain_type = "BNB"
         if self.gain_type == GainType.AVERAGE:
             gain_type = "104"
         if self.gain_type == GainType.FUTURE_FIFO:
@@ -494,7 +497,7 @@ def calculate_unaccounted_disposal_gains(trade_list: List[Trade]):
     for trade in trade_list:
         if trade.sell_currency != NATIVE_CURRENCY and trade.unaccounted_sell_amount != 0:
             logger.warning(
-                f"Trade: {trade} has unaccounted disposal of {trade.unaccounted_sell_amount} {trade.sell_currency}  which will be given cost basis 0")
+                f"TRADE WARNING: Unaccounted for disposal: {trade} has unaccounted disposal of {trade.unaccounted_sell_amount} {trade.sell_currency}  which will be given cost basis 0")
             g = Gain(GainType.UNACCOUNTED, trade.unaccounted_sell_amount, trade)
             gains.append(g)
 
