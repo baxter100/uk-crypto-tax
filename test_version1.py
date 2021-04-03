@@ -78,10 +78,11 @@ class Test(unittest.TestCase):
         self.assertTrue(bnb_condition(disposal, buy5))
 
     def test_gains(self):
+
         day_gains = 51.13333333
-        bnb_gains = -24.8019802
-        avg_gains = 127.07006
-        total_gains = 153.40141
+        bnb_gains = -24.90099
+        avg_gains = 127.15818
+        total_gains = 153.3905
         tax_year = 2018
 
         trade_list = read_csv_into_trade_list(sample_csv)
@@ -94,6 +95,7 @@ class Test(unittest.TestCase):
 
         self.assertAlmostEqual(day_gains, relevant_day_gains, 4)
         calculated_bnb = calculate_bnb_gains_fifo(trade_list)
+
         relevant_bnb_gains = sum(
             [g.native_currency_gain_value for g in calculated_bnb if within_tax_year(g.disposal_trade, tax_year)])
         self.assertAlmostEqual(bnb_gains, relevant_bnb_gains, 4)
